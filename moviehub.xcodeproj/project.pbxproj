@@ -6,11 +6,33 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9274121A2F24FA4F0027B3DE /* Domain in Frameworks */ = {isa = PBXBuildFile; productRef = 927412192F24FA4F0027B3DE /* Domain */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		9277BD152F24DA8B003E5D04 /* moviehub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = moviehub.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		92AEC2982F25131100DB7E0E /* moviehub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = moviehub.app; path = /Users/glebus/Developer/iOS/Home/moviehub/build/Debug/moviehub.app; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		927412282F24FC810027B3DE /* Exceptions for "Packages" folder in "moviehub" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Domain,
+			);
+			target = 9277BD142F24DA8B003E5D04 /* moviehub */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		927412272F24FC810027B3DE /* Packages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				927412282F24FC810027B3DE /* Exceptions for "Packages" folder in "moviehub" target */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
 		9277BD172F24DA8B003E5D04 /* moviehub */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = moviehub;
@@ -23,6 +45,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9274121A2F24FA4F0027B3DE /* Domain in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,16 +56,8 @@
 			isa = PBXGroup;
 			children = (
 				9277BD172F24DA8B003E5D04 /* moviehub */,
-				9277BD162F24DA8B003E5D04 /* Products */,
+				927412272F24FC810027B3DE /* Packages */,
 			);
-			sourceTree = "<group>";
-		};
-		9277BD162F24DA8B003E5D04 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				9277BD152F24DA8B003E5D04 /* moviehub.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -61,13 +76,15 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				927412272F24FC810027B3DE /* Packages */,
 				9277BD172F24DA8B003E5D04 /* moviehub */,
 			);
 			name = moviehub;
 			packageProductDependencies = (
+				927412192F24FA4F0027B3DE /* Domain */,
 			);
 			productName = moviehub;
-			productReference = 9277BD152F24DA8B003E5D04 /* moviehub.app */;
+			productReference = 92AEC2982F25131100DB7E0E /* moviehub.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -94,8 +111,11 @@
 			);
 			mainGroup = 9277BD0C2F24DA8B003E5D04;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				927412182F24FA4F0027B3DE /* XCLocalSwiftPackageReference "Packages/Domain" */,
+			);
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 9277BD162F24DA8B003E5D04 /* Products */;
+			productRefGroup = 9277BD0C2F24DA8B003E5D04;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -345,6 +365,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		927412182F24FA4F0027B3DE /* XCLocalSwiftPackageReference "Packages/Domain" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Domain;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		927412192F24FA4F0027B3DE /* Domain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Domain;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9277BD0D2F24DA8B003E5D04 /* Project object */;
 }
