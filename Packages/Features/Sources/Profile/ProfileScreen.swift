@@ -2,14 +2,14 @@ import SwiftUI
 import Domain
 
 public struct ProfileDependencies: Sendable {
-    public let profileRepository: ProfileRepositoryProtocol
+    public let sessionInteractor: SessionInteractor
     public let makeAuthScreen: @MainActor () -> AnyView
 
     public init(
-        profileRepository: ProfileRepositoryProtocol,
+        sessionInteractor: SessionInteractor,
         makeAuthScreen: @escaping @MainActor () -> AnyView
     ) {
-        self.profileRepository = profileRepository
+        self.sessionInteractor = sessionInteractor
         self.makeAuthScreen = makeAuthScreen
     }
 }
@@ -21,7 +21,7 @@ public struct ProfileScreen: View {
     public init(dependencies: ProfileDependencies) {
         self.dependencies = dependencies
         _viewModel = State(
-            initialValue: ProfileViewModel(profileRepository: dependencies.profileRepository)
+            initialValue: ProfileViewModel(sessionInteractor: dependencies.sessionInteractor)
         )
     }
 

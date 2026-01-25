@@ -16,22 +16,23 @@ public final class FavoriteListViewModel {
     public var isAuthSheetPresented: Bool
     public var selectedMovieID: MovieID?
 
-    private let profileRepository: ProfileRepositoryProtocol
-    private let favoritesRepository: FavoritesRepositoryProtocol
+    private let sessionInteractor: SessionInteractor
+    private let favoritesInteractor: FavoritesInteractor
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
     @ObservationIgnored nonisolated(unsafe) private var favoritesTask: Task<Void, Never>?
     private var currentUser: User?
 
     public init(
-        profileRepository: ProfileRepositoryProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol
+        sessionInteractor: SessionInteractor,
+        favoritesInteractor: FavoritesInteractor
     ) {
-        self.profileRepository = profileRepository
-        self.favoritesRepository = favoritesRepository
+        self.sessionInteractor = sessionInteractor
+        self.favoritesInteractor = favoritesInteractor
         self.state = .loggedOut
         self.isAuthSheetPresented = false
         self.selectedMovieID = nil
-        subscribeToProfile()
+        subscribeToSession()
+        subscribeToFavorites()
     }
 
     deinit {
@@ -47,28 +48,21 @@ public final class FavoriteListViewModel {
         selectedMovieID = movieId
     }
 
-    private func subscribeToProfile() {
+    private func subscribeToSession() {
         profileTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for await user in profileRepository.currentUserStream {
+            for await user in sessionInteractor.currentUserStream {
                 self.currentUser = user
-                await updateFavoritesSubscription(for: user)
+                self.state = user == nil ? .loggedOut : .loading
             }
         }
     }
 
-    private func updateFavoritesSubscription(for user: User?) async {
-        favoritesTask?.cancel()
-        guard let user else {
-            state = .loggedOut
-            return
-        }
-
-        state = .loading
+    private func subscribeToFavorites() {
         favoritesTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for await favorites in favoritesRepository.favoritesStream(userId: user.id) {
-                self.state = .loaded(favorites)
+            for await favorites in favoritesInteractor.favoritesStream {
+                self.state = self.currentUser == nil ? .loggedOut : .loaded(favorites)
             }
         }
     }

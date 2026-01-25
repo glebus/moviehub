@@ -1,26 +1,37 @@
 import Domain
 
-@MainActor
-final class FavoritesRepositoryMock: FavoritesRepositoryProtocol, @unchecked Sendable {
-    var favorites: Set<MovieID> = []
+actor FavoritesRepositoryMock: FavoritesRepositoryProtocol {
+    private var favorites: [UserID: [Movie]] = [:]
 
-    func favorites(userId: UserID) async throws -> [Movie] {
-        []
+    func fetchFavorites(userId: UserID) async throws -> [Movie] {
+        favorites[userId] ?? []
     }
 
-    func favoritesStream(userId: UserID) -> AsyncStream<[Movie]> {
-        AsyncStream { _ in }
+    func existsFavorite(userId: UserID, movieId: MovieID) async throws -> Bool {
+        (favorites[userId] ?? []).contains { $0.id == movieId }
     }
 
-    func isFavorite(movieId: MovieID, userId: UserID) async throws -> Bool {
-        favorites.contains(movieId)
+    func addFavorite(userId: UserID, movie: MovieDetails) async throws {
+        var list = favorites[userId] ?? []
+        if !list.contains(where: { $0.id == movie.id }) {
+            let item = Movie(
+                id: movie.id,
+                title: movie.title,
+                year: nil,
+                posterURL: movie.posterURL
+            )
+            list.append(item)
+        }
+        favorites[userId] = list
     }
 
-    func add(movie: MovieDetails, userId: UserID) async throws {
-        favorites.insert(movie.id)
+    func removeFavorite(userId: UserID, movieId: MovieID) async throws {
+        var list = favorites[userId] ?? []
+        list.removeAll { $0.id == movieId }
+        favorites[userId] = list
     }
 
-    func remove(movieId: MovieID, userId: UserID) async throws {
-        favorites.remove(movieId)
+    func seedFavorites(_ movies: [Movie], for userId: UserID) {
+        favorites[userId] = movies
     }
 }

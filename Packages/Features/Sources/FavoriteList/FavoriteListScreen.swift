@@ -2,19 +2,19 @@ import SwiftUI
 import Domain
 
 public struct FavoriteListDependencies: Sendable {
-    public let profileRepository: ProfileRepositoryProtocol
-    public let favoritesRepository: FavoritesRepositoryProtocol
+    public let sessionInteractor: SessionInteractor
+    public let favoritesInteractor: FavoritesInteractor
     public let makeMovieDetailsScreen: @MainActor (MovieID) -> AnyView
     public let makeAuthScreen: @MainActor () -> AnyView
 
     public init(
-        profileRepository: ProfileRepositoryProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol,
+        sessionInteractor: SessionInteractor,
+        favoritesInteractor: FavoritesInteractor,
         makeMovieDetailsScreen: @escaping @MainActor (MovieID) -> AnyView,
         makeAuthScreen: @escaping @MainActor () -> AnyView
     ) {
-        self.profileRepository = profileRepository
-        self.favoritesRepository = favoritesRepository
+        self.sessionInteractor = sessionInteractor
+        self.favoritesInteractor = favoritesInteractor
         self.makeMovieDetailsScreen = makeMovieDetailsScreen
         self.makeAuthScreen = makeAuthScreen
     }
@@ -28,8 +28,8 @@ public struct FavoriteListScreen: View {
         self.dependencies = dependencies
         _viewModel = State(
             initialValue: FavoriteListViewModel(
-                profileRepository: dependencies.profileRepository,
-                favoritesRepository: dependencies.favoritesRepository
+                sessionInteractor: dependencies.sessionInteractor,
+                favoritesInteractor: dependencies.favoritesInteractor
             )
         )
     }

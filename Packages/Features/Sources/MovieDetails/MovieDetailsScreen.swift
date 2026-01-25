@@ -4,24 +4,21 @@ import Domain
 public struct MovieDetailsDependencies: Sendable {
     public let movieId: MovieID
     public let movieRepository: MovieRepositoryProtocol
-    public let profileRepository: ProfileRepositoryProtocol
-    public let favoritesRepository: FavoritesRepositoryProtocol
-    public let toggleFavoriteUseCase: ToggleFavoriteUseCaseProtocol
+    public let sessionInteractor: SessionInteractor
+    public let favoritesInteractor: FavoritesInteractor
     public let makeAuthScreen: @MainActor () -> AnyView
 
     public init(
         movieId: MovieID,
         movieRepository: MovieRepositoryProtocol,
-        profileRepository: ProfileRepositoryProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol,
-        toggleFavoriteUseCase: ToggleFavoriteUseCaseProtocol,
+        sessionInteractor: SessionInteractor,
+        favoritesInteractor: FavoritesInteractor,
         makeAuthScreen: @escaping @MainActor () -> AnyView
     ) {
         self.movieId = movieId
         self.movieRepository = movieRepository
-        self.profileRepository = profileRepository
-        self.favoritesRepository = favoritesRepository
-        self.toggleFavoriteUseCase = toggleFavoriteUseCase
+        self.sessionInteractor = sessionInteractor
+        self.favoritesInteractor = favoritesInteractor
         self.makeAuthScreen = makeAuthScreen
     }
 }
@@ -36,9 +33,8 @@ public struct MovieDetailsScreen: View {
             initialValue: MovieDetailsViewModel(
                 movieId: dependencies.movieId,
                 movieRepository: dependencies.movieRepository,
-                profileRepository: dependencies.profileRepository,
-                favoritesRepository: dependencies.favoritesRepository,
-                toggleFavoriteUseCase: dependencies.toggleFavoriteUseCase
+                sessionInteractor: dependencies.sessionInteractor,
+                favoritesInteractor: dependencies.favoritesInteractor
             )
         )
     }

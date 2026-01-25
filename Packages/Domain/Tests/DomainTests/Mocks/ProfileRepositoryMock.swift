@@ -1,24 +1,15 @@
 import Domain
 
-@MainActor
-final class ProfileRepositoryMock: ProfileRepositoryProtocol, @unchecked Sendable {
-    var user: User?
+actor ProfileRepositoryMock: ProfileRepositoryProtocol {
+    private var users: [String: User] = [:]
 
-    func currentUser() -> User? {
-        user
+    func findUser(username: String) async throws -> User? {
+        users[username]
     }
 
-    var currentUserStream: AsyncStream<User?> {
-        AsyncStream { _ in }
-    }
-
-    func login(username: String) async throws -> User {
-        let user = User(id: UserID("mock"), username: username)
-        self.user = user
+    func createUser(username: String) async throws -> User {
+        let user = User(id: UserID(username), username: username)
+        users[username] = user
         return user
-    }
-
-    func logout() async {
-        user = nil
     }
 }

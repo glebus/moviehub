@@ -20,13 +20,13 @@ public final class MovieListViewModel {
     public var state: State
 
     private let movieRepository: MovieRepositoryProtocol
-    private let profileRepository: ProfileRepositoryProtocol
+    private let sessionInteractor: SessionInteractor
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
     private var currentUser: User?
 
-    public init(movieRepository: MovieRepositoryProtocol, profileRepository: ProfileRepositoryProtocol) {
+    public init(movieRepository: MovieRepositoryProtocol, sessionInteractor: SessionInteractor) {
         self.movieRepository = movieRepository
-        self.profileRepository = profileRepository
+        self.sessionInteractor = sessionInteractor
         self.searchText = ""
         self.profileButtonTitle = "Login"
         self.isAuthSheetPresented = false
@@ -85,7 +85,7 @@ public final class MovieListViewModel {
     private func subscribeToProfile() {
         profileTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for await user in profileRepository.currentUserStream {
+            for await user in sessionInteractor.currentUserStream {
                 self.currentUser = user
                 self.profileButtonTitle = user?.username ?? "Login"
             }

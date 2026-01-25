@@ -3,20 +3,20 @@ import Domain
 
 public struct MovieListDependencies: Sendable {
     public let movieRepository: MovieRepositoryProtocol
-    public let profileRepository: ProfileRepositoryProtocol
+    public let sessionInteractor: SessionInteractor
     public let makeMovieDetailsScreen: @MainActor (MovieID) -> AnyView
     public let makeProfileScreen: @MainActor () -> AnyView
     public let makeAuthScreen: @MainActor () -> AnyView
 
     public init(
         movieRepository: MovieRepositoryProtocol,
-        profileRepository: ProfileRepositoryProtocol,
+        sessionInteractor: SessionInteractor,
         makeMovieDetailsScreen: @escaping @MainActor (MovieID) -> AnyView,
         makeProfileScreen: @escaping @MainActor () -> AnyView,
         makeAuthScreen: @escaping @MainActor () -> AnyView
     ) {
         self.movieRepository = movieRepository
-        self.profileRepository = profileRepository
+        self.sessionInteractor = sessionInteractor
         self.makeMovieDetailsScreen = makeMovieDetailsScreen
         self.makeProfileScreen = makeProfileScreen
         self.makeAuthScreen = makeAuthScreen
@@ -32,7 +32,7 @@ public struct MovieListScreen: View {
         _viewModel = State(
             initialValue: MovieListViewModel(
                 movieRepository: dependencies.movieRepository,
-                profileRepository: dependencies.profileRepository
+                sessionInteractor: dependencies.sessionInteractor
             )
         )
     }

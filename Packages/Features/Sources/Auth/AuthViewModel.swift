@@ -15,10 +15,10 @@ public final class AuthViewModel {
     public var username: String
     public var state: State
 
-    private let profileRepository: ProfileRepositoryProtocol
+    private let sessionInteractor: SessionInteractor
 
-    public init(profileRepository: ProfileRepositoryProtocol) {
-        self.profileRepository = profileRepository
+    public init(sessionInteractor: SessionInteractor) {
+        self.sessionInteractor = sessionInteractor
         self.username = ""
         self.state = .idle
     }
@@ -36,7 +36,7 @@ public final class AuthViewModel {
 
         state = .submitting
         do {
-            _ = try await profileRepository.login(username: trimmed)
+            _ = try await sessionInteractor.login(username: trimmed)
             state = .success
         } catch {
             state = .error(error.localizedDescription)

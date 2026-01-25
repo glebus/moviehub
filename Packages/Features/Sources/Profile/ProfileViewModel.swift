@@ -14,11 +14,11 @@ public final class ProfileViewModel {
     public var isAuthSheetPresented: Bool
     public var errorMessage: String?
 
-    private let profileRepository: ProfileRepositoryProtocol
+    private let sessionInteractor: SessionInteractor
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
 
-    public init(profileRepository: ProfileRepositoryProtocol) {
-        self.profileRepository = profileRepository
+    public init(sessionInteractor: SessionInteractor) {
+        self.sessionInteractor = sessionInteractor
         self.state = .loggedOut
         self.isAuthSheetPresented = false
         self.errorMessage = nil
@@ -30,7 +30,7 @@ public final class ProfileViewModel {
     }
 
     public func logoutTapped() {
-        Task { await profileRepository.logout() }
+        Task { await sessionInteractor.logout() }
     }
 
     public func loginTapped() {
@@ -40,7 +40,7 @@ public final class ProfileViewModel {
     private func subscribeToProfile() {
         profileTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for await user in profileRepository.currentUserStream {
+            for await user in sessionInteractor.currentUserStream {
                 if let user {
                     self.state = .loggedIn(username: user.username)
                 } else {

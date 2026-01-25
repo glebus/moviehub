@@ -21,37 +21,37 @@ public final class MovieDetailsViewModel {
 
     private let movieId: MovieID
     private let movieRepository: MovieRepositoryProtocol
-    private let profileRepository: ProfileRepositoryProtocol
-    private let favoritesRepository: FavoritesRepositoryProtocol
-    private let toggleFavoriteUseCase: ToggleFavoriteUseCaseProtocol
+    private let sessionInteractor: SessionInteractor
+    private let favoritesInteractor: FavoritesInteractor
 
-    @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var favoritesTask: Task<Void, Never>?
     private var currentUser: User?
     private var movieDetails: MovieDetails?
 
     public init(
         movieId: MovieID,
         movieRepository: MovieRepositoryProtocol,
-        profileRepository: ProfileRepositoryProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol,
-        toggleFavoriteUseCase: ToggleFavoriteUseCaseProtocol
+        sessionInteractor: SessionInteractor,
+        favoritesInteractor: FavoritesInteractor
     ) {
         self.movieId = movieId
         self.movieRepository = movieRepository
-        self.profileRepository = profileRepository
-        self.favoritesRepository = favoritesRepository
-        self.toggleFavoriteUseCase = toggleFavoriteUseCase
+        self.sessionInteractor = sessionInteractor
+        self.favoritesInteractor = favoritesInteractor
         self.state = .idle
         self.isFavorite = false
         self.favoriteButtonEnabled = false
         self.favoriteButtonTitle = "Add to favorites"
         self.isAuthSheetPresented = false
         self.errorMessage = nil
-        subscribeToProfile()
+        subscribeToSession()
+        subscribeToFavorites()
     }
 
     deinit {
-        profileTask?.cancel()
+        sessionTask?.cancel()
+        favoritesTask?.cancel()
     }
 
     public func onAppear() {
@@ -76,38 +76,33 @@ public final class MovieDetailsViewModel {
                 genresText: details.genres.joined(separator: ", ")
             )
             state = .loaded(presentation)
-            await refreshFavoriteState()
+            isFavorite = favoritesInteractor.isFavorite(movieId: details.id)
+            updateFavoriteButtonTitle()
         } catch {
             state = .error(error.localizedDescription)
         }
     }
 
-    private func subscribeToProfile() {
-        profileTask = Task { @MainActor [weak self] in
+    private func subscribeToSession() {
+        sessionTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for await user in profileRepository.currentUserStream {
+            for await user in sessionInteractor.currentUserStream {
                 self.currentUser = user
                 self.favoriteButtonEnabled = user != nil
-                await refreshFavoriteState()
             }
         }
     }
 
-    private func refreshFavoriteState() async {
-        guard let details = movieDetails else { return }
-        guard let user = currentUser else {
-            isFavorite = false
-            updateFavoriteButtonTitle()
-            return
+    private func subscribeToFavorites() {
+        favoritesTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await favorites in favoritesInteractor.favoritesStream {
+                if let details = movieDetails {
+                    self.isFavorite = favorites.contains { $0.id == details.id }
+                    self.updateFavoriteButtonTitle()
+                }
+            }
         }
-
-        do {
-            let favorite = try await favoritesRepository.isFavorite(movieId: details.id, userId: user.id)
-            isFavorite = favorite
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        updateFavoriteButtonTitle()
     }
 
     private func toggleFavorite() async {
@@ -118,7 +113,7 @@ public final class MovieDetailsViewModel {
         }
 
         do {
-            let newValue = try await toggleFavoriteUseCase.toggle(movie: details)
+            let newValue = try await favoritesInteractor.toggle(movie: details)
             isFavorite = newValue
             updateFavoriteButtonTitle()
         } catch {
