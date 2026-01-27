@@ -28,6 +28,10 @@ public final class AppRouter: AppRouterProtocol {
         }
     }
 
+    public func selectTab(_ tab: AppTab) {
+        selectedTab = tab
+    }
+
     public func dismissSheet() {
         presentedSheet = nil
     }

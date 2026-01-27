@@ -1,6 +1,7 @@
 import SwiftUI
 import Domain
 import Router
+import AuthButton
 import DomainMocks
 
 @MainActor
@@ -8,22 +9,25 @@ public struct MovieListBuilder {
     private let movieRepository: MovieRepositoryProtocol
     private let sessionInteractor: SessionInteractorProtocol
     private let router: AppRouterProtocol
+    private let authButtonBuilder: AuthButtonBuilder
 
     public init(
         movieRepository: MovieRepositoryProtocol,
         sessionInteractor: SessionInteractorProtocol,
-        router: AppRouterProtocol
+        router: AppRouterProtocol,
+        authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieRepository = movieRepository
         self.sessionInteractor = sessionInteractor
         self.router = router
+        self.authButtonBuilder = authButtonBuilder
     }
 
     public func build() -> MovieListScreen {
         let viewModel = MovieListViewModel(
             movieRepository: movieRepository,
-            sessionInteractor: sessionInteractor,
-            router: router
+            router: router,
+            authButtonBuilder: authButtonBuilder
         )
         return MovieListScreen(viewModel: viewModel)
     }
@@ -41,7 +45,8 @@ public struct MovieListBuilder {
         return MovieListBuilder(
             movieRepository: movieRepo,
             sessionInteractor: session,
-            router: router
+            router: router,
+            authButtonBuilder: AuthButtonBuilder.preview()
         )
     }
 }

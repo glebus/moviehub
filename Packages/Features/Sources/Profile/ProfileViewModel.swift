@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import Domain
 import Router
+import AuthButton
 
 @MainActor
 @Observable
@@ -17,11 +18,17 @@ public final class ProfileViewModel {
 
     private let sessionInteractor: SessionInteractorProtocol
     private let router: AppRouterProtocol
+    public let authButtonBuilder: AuthButtonBuilder
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
 
-    init(sessionInteractor: SessionInteractorProtocol, router: AppRouterProtocol) {
+    init(
+        sessionInteractor: SessionInteractorProtocol,
+        router: AppRouterProtocol,
+        authButtonBuilder: AuthButtonBuilder
+    ) {
         self.sessionInteractor = sessionInteractor
         self.router = router
+        self.authButtonBuilder = authButtonBuilder
         self.state = .loggedOut
         self.isAuthSheetPresented = false
         self.errorMessage = nil
@@ -34,10 +41,6 @@ public final class ProfileViewModel {
 
     public func logoutTapped() {
         Task { await sessionInteractor.logout() }
-    }
-
-    public func loginTapped() {
-        router.navigate(.auth)
     }
 
     private func subscribeToProfile() {

@@ -6,20 +6,30 @@ import FavoriteList
 import Profile
 import Auth
 import Router
+import AuthButton
 
 struct RootTabView: View {
     let container: AppContainer
     @State private var router = AppRouter()
 
     var body: some View {
+        let authButtonBuilder = AuthButtonBuilder(
+            sessionInteractor: container.sessionInteractor,
+            router: router
+        )
         TabView(selection: $router.selectedTab) {
             NavigationStack(path: $router.homePath) {
                 MovieListBuilder(
                     movieRepository: container.movieRepository,
                     sessionInteractor: container.sessionInteractor,
-                    router: router
+                    router: router,
+                    authButtonBuilder: authButtonBuilder
                 ).build()
-                .appNavigationDestination(container: container, router: router)
+                .appNavigationDestination(
+                    container: container,
+                    router: router,
+                    authButtonBuilder: authButtonBuilder
+                )
             }
             .tabItem {
                 Label("Home", systemImage: "film")
@@ -30,9 +40,14 @@ struct RootTabView: View {
                 FavoriteListBuilder(
                     sessionInteractor: container.sessionInteractor,
                     favoritesInteractor: container.favoritesInteractor,
-                    router: router
+                    router: router,
+                    authButtonBuilder: authButtonBuilder
                 ).build()
-                .appNavigationDestination(container: container, router: router)
+                .appNavigationDestination(
+                    container: container,
+                    router: router,
+                    authButtonBuilder: authButtonBuilder
+                )
             }
             .tabItem {
                 Label("Favorites", systemImage: "heart")
@@ -42,9 +57,14 @@ struct RootTabView: View {
             NavigationStack(path: $router.profilePath) {
                 ProfileBuilder(
                     sessionInteractor: container.sessionInteractor,
-                    router: router
+                    router: router,
+                    authButtonBuilder: authButtonBuilder
                 ).build()
-                .appNavigationDestination(container: container, router: router)
+                .appNavigationDestination(
+                    container: container,
+                    router: router,
+                    authButtonBuilder: authButtonBuilder
+                )
             }
             .tabItem {
                 Label("Profile", systemImage: "person")

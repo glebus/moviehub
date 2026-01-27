@@ -1,7 +1,7 @@
 import SwiftUI
 import Domain
 import Router
-import DomainMocks
+import AuthButton
 
 public struct FavoriteListScreen: View {
     @State var viewModel: FavoriteListViewModel
@@ -13,10 +13,6 @@ public struct FavoriteListScreen: View {
                 VStack {
                     Text("Not logged in")
                         .font(.headline)
-                    Button("Login") {
-                        viewModel.loginTapped()
-                    }
-                    .buttonStyle(.borderedProminent)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .loading:
@@ -45,6 +41,9 @@ public struct FavoriteListScreen: View {
             }
         }
         .navigationTitle("Favorites")
+        .toolbar {
+            viewModel.authButtonBuilder.build()
+        }
     }
 }
 

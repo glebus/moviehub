@@ -1,7 +1,7 @@
 import SwiftUI
 import Domain
 import Router
-import DomainMocks
+import AuthButton
 
 public struct ProfileScreen: View {
     @State var viewModel: ProfileViewModel
@@ -20,14 +20,13 @@ public struct ProfileScreen: View {
             case .loggedOut:
                 Text("Not logged in")
                     .font(.headline)
-                Button("Login") {
-                    viewModel.loginTapped()
-                }
-                .buttonStyle(.borderedProminent)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle("Profile")
+        .toolbar {
+            viewModel.authButtonBuilder.build()
+        }
     }
 }
 

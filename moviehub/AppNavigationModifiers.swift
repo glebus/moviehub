@@ -3,10 +3,12 @@ import Observation
 import Router
 import MovieDetails
 import Auth
+import AuthButton
 
 struct AppNavigationDestinationModifier: ViewModifier {
     let container: AppContainer
     let router: AppRouter
+    let authButtonBuilder: AuthButtonBuilder
 
     func body(content: Content) -> some View {
         content.navigationDestination(for: AppDestination<AppRoute>.self) { destination in
@@ -18,7 +20,8 @@ struct AppNavigationDestinationModifier: ViewModifier {
                     movieRepository: container.movieRepository,
                     sessionInteractor: container.sessionInteractor,
                     favoritesInteractor: container.favoritesInteractor,
-                    router: router
+                    router: router,
+                    authButtonBuilder: authButtonBuilder
                 ).build(movieId: movieId)
             }
         }
@@ -45,8 +48,16 @@ struct AppPresentationModifier: ViewModifier {
 }
 
 extension View {
-    func appNavigationDestination(container: AppContainer, router: AppRouter) -> some View {
-        modifier(AppNavigationDestinationModifier(container: container, router: router))
+    func appNavigationDestination(
+        container: AppContainer,
+        router: AppRouter,
+        authButtonBuilder: AuthButtonBuilder
+    ) -> some View {
+        modifier(AppNavigationDestinationModifier(
+            container: container,
+            router: router,
+            authButtonBuilder: authButtonBuilder
+        ))
     }
 
     func appPresentation(container: AppContainer, router: AppRouter) -> some View {

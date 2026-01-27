@@ -1,6 +1,7 @@
 import SwiftUI
 import Domain
 import Router
+import AuthButton
 import DomainMocks
 
 @MainActor
@@ -8,22 +9,26 @@ public struct FavoriteListBuilder {
     private let sessionInteractor: SessionInteractorProtocol
     private let favoritesInteractor: FavoritesInteractorProtocol
     private let router: AppRouterProtocol
+    private let authButtonBuilder: AuthButtonBuilder
 
     public init(
         sessionInteractor: SessionInteractorProtocol,
         favoritesInteractor: FavoritesInteractorProtocol,
-        router: AppRouterProtocol
+        router: AppRouterProtocol,
+        authButtonBuilder: AuthButtonBuilder
     ) {
         self.sessionInteractor = sessionInteractor
         self.favoritesInteractor = favoritesInteractor
         self.router = router
+        self.authButtonBuilder = authButtonBuilder
     }
 
     public func build() -> FavoriteListScreen {
         let viewModel = FavoriteListViewModel(
             sessionInteractor: sessionInteractor,
             favoritesInteractor: favoritesInteractor,
-            router: router
+            router: router,
+            authButtonBuilder: authButtonBuilder
         )
         return FavoriteListScreen(viewModel: viewModel)
     }
@@ -41,7 +46,8 @@ public struct FavoriteListBuilder {
         return FavoriteListBuilder(
             sessionInteractor: session,
             favoritesInteractor: favorites,
-            router: router
+            router: router,
+            authButtonBuilder: AuthButtonBuilder.preview()
         )
     }
 }

@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import Domain
 import Router
+import AuthButton
 
 @MainActor
 @Observable
@@ -19,6 +20,7 @@ public final class FavoriteListViewModel {
     private let sessionInteractor: SessionInteractorProtocol
     private let favoritesInteractor: FavoritesInteractorProtocol
     private let router: AppRouterProtocol
+    public let authButtonBuilder: AuthButtonBuilder
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
     @ObservationIgnored nonisolated(unsafe) private var favoritesTask: Task<Void, Never>?
     private var currentUser: User?
@@ -26,11 +28,13 @@ public final class FavoriteListViewModel {
     init(
         sessionInteractor: SessionInteractorProtocol,
         favoritesInteractor: FavoritesInteractorProtocol,
-        router: AppRouterProtocol
+        router: AppRouterProtocol,
+        authButtonBuilder: AuthButtonBuilder
     ) {
         self.sessionInteractor = sessionInteractor
         self.favoritesInteractor = favoritesInteractor
         self.router = router
+        self.authButtonBuilder = authButtonBuilder
         self.state = .loggedOut
         self.isAuthSheetPresented = false
         subscribeToSession()
@@ -40,10 +44,6 @@ public final class FavoriteListViewModel {
     deinit {
         profileTask?.cancel()
         favoritesTask?.cancel()
-    }
-
-    public func loginTapped() {
-        router.navigate(.auth)
     }
 
     public func select(movieId: MovieID) {

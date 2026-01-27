@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import Domain
 import Router
+import AuthButton
 
 @MainActor
 @Observable
@@ -24,6 +25,7 @@ public final class MovieDetailsViewModel {
     private let sessionInteractor: SessionInteractorProtocol
     private let favoritesInteractor: FavoritesInteractorProtocol
     private let router: AppRouterProtocol
+    public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
     @ObservationIgnored nonisolated(unsafe) private var favoritesTask: Task<Void, Never>?
@@ -35,13 +37,15 @@ public final class MovieDetailsViewModel {
         movieRepository: MovieRepositoryProtocol,
         sessionInteractor: SessionInteractorProtocol,
         favoritesInteractor: FavoritesInteractorProtocol,
-        router: AppRouterProtocol
+        router: AppRouterProtocol,
+        authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieId = movieId
         self.movieRepository = movieRepository
         self.sessionInteractor = sessionInteractor
         self.favoritesInteractor = favoritesInteractor
         self.router = router
+        self.authButtonBuilder = authButtonBuilder
         self.state = .idle
         self.isFavorite = false
         self.favoriteButtonEnabled = false

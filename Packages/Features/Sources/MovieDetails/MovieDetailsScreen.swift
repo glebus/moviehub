@@ -1,7 +1,7 @@
 import SwiftUI
 import Domain
 import Router
-import DomainMocks
+import AuthButton
 
 public struct MovieDetailsScreen: View {
     @State var viewModel: MovieDetailsViewModel
@@ -77,6 +77,9 @@ public struct MovieDetailsScreen: View {
             .padding()
         }
         .navigationTitle("Details")
+        .toolbar {
+            viewModel.authButtonBuilder.build()
+        }
         .onAppear {
             viewModel.onAppear()
         }
