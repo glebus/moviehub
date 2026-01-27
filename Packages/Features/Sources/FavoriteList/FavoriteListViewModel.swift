@@ -47,7 +47,7 @@ public final class FavoriteListViewModel {
     }
 
     public func select(movieId: MovieID) {
-        router.navigate(.movieDetails(movieId))
+        router.push(.movieDetails(movieId))
     }
 
     private func subscribeToSession() {

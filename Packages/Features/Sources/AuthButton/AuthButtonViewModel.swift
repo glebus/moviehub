@@ -24,7 +24,7 @@ public final class AuthButtonViewModel {
 
     public func tapped() {
         if currentUser == nil {
-            router.navigate(.auth)
+            router.present(.auth)
         } else {
             router.selectTab(.profile)
         }

@@ -11,10 +11,8 @@ struct AppNavigationDestinationModifier: ViewModifier {
     let authButtonBuilder: AuthButtonBuilder
 
     func body(content: Content) -> some View {
-        content.navigationDestination(for: AppDestination<AppRoute>.self) { destination in
+        content.navigationDestination(for: AppDestination<AppPushDestination>.self) { destination in
             switch destination.value {
-            case .auth:
-                EmptyView()
             case .movieDetails(let movieId):
                 MovieDetailsBuilder(
                     movieRepository: container.movieRepository,
@@ -40,8 +38,6 @@ struct AppPresentationModifier: ViewModifier {
                     sessionInteractor: container.sessionInteractor,
                     router: router
                 ).build()
-            case .movieDetails:
-                EmptyView()
             }
         }
     }

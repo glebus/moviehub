@@ -45,6 +45,19 @@ let package = Package(
         .target(
             name: "Auth",
             dependencies: ["Domain", "Router", .product(name: "DomainMocks", package: "Domain")]
+        ),
+        .testTarget(
+            name: "FeaturesTests",
+            dependencies: [
+                "MovieList",
+                "MovieDetails",
+                "FavoriteList",
+                "Profile",
+                "Auth",
+                "AuthButton",
+                "Router",
+                .product(name: "DomainMocks", package: "Domain")
+            ]
         )
     ]
 )

@@ -14,13 +14,13 @@
 		925AFD232F266279001FD1FE /* MovieList in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD222F266279001FD1FE /* MovieList */; };
 		925AFD252F266279001FD1FE /* Profile in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD242F266279001FD1FE /* Profile */; };
 		925AFD272F266279001FD1FE /* Router in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD262F266279001FD1FE /* Router */; };
-		925AFD3F2F267B97001FD1FE /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 925AFD3E2F267B97001FD1FE /* Secrets.xcconfig */; };
 		9274121A2F24FA4F0027B3DE /* Domain in Frameworks */ = {isa = PBXBuildFile; productRef = 927412192F24FA4F0027B3DE /* Domain */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		925AFD2A2F2677E6001FD1FE /* moviehub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = moviehub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		925AFD3E2F267B97001FD1FE /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		925AFD5A2F29447B001FD1FE /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -93,6 +93,7 @@
 				927412272F24FC810027B3DE /* Packages */,
 				925AFD192F266279001FD1FE /* Frameworks */,
 				925AFD2A2F2677E6001FD1FE /* moviehub.app */,
+				925AFD5A2F29447B001FD1FE /* README.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -172,7 +173,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				925AFD3F2F267B97001FD1FE /* Secrets.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

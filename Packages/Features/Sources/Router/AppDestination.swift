@@ -9,7 +9,10 @@ public struct AppDestination<Value: Hashable & Sendable>: Identifiable, Equatabl
     }
 }
 
-public enum AppRoute: Hashable, Sendable {
-    case auth
+public enum AppPushDestination: Hashable, Sendable {
     case movieDetails(MovieID)
+}
+
+public enum AppSheetDestination: Hashable, Sendable {
+    case auth
 }

@@ -1,6 +1,7 @@
 @MainActor
 public protocol AppRouterProtocol: AnyObject, Sendable {
-    func navigate(_ destination: AppRoute)
+    func push(_ destination: AppPushDestination)
+    func present(_ destination: AppSheetDestination)
     func selectTab(_ tab: AppTab)
     func dismissSheet()
     func pop()

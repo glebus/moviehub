@@ -114,7 +114,7 @@ public final class MovieDetailsViewModel {
     private func toggleFavorite() async {
         guard let details = movieDetails else { return }
         guard currentUser != nil else {
-            router.navigate(.auth)
+            router.present(.auth)
             return
         }
 

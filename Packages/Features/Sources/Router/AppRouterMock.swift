@@ -1,6 +1,10 @@
+import Observation
+
 @MainActor
+@Observable
 public final class AppRouterMock: AppRouterProtocol {
-    public private(set) var lastDestination: AppRoute?
+    public private(set) var lastPushDestination: AppPushDestination?
+    public private(set) var lastSheetDestination: AppSheetDestination?
     public private(set) var selectedTab: AppTab?
     public private(set) var didDismissSheet = false
     public private(set) var popCount = 0
@@ -8,8 +12,12 @@ public final class AppRouterMock: AppRouterProtocol {
 
     public init() {}
 
-    public func navigate(_ destination: AppRoute) {
-        lastDestination = destination
+    public func push(_ destination: AppPushDestination) {
+        lastPushDestination = destination
+    }
+
+    public func present(_ destination: AppSheetDestination) {
+        lastSheetDestination = destination
     }
 
     public func selectTab(_ tab: AppTab) {

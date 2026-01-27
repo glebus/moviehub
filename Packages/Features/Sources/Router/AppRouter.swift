@@ -4,28 +4,27 @@ import Observation
 @Observable
 public final class AppRouter: AppRouterProtocol {
     public var selectedTab: AppTab = .home
-    public var homePath: [AppDestination<AppRoute>] = []
-    public var favoritesPath: [AppDestination<AppRoute>] = []
-    public var profilePath: [AppDestination<AppRoute>] = []
-    public var presentedSheet: AppDestination<AppRoute>?
+    public var homePath: [AppDestination<AppPushDestination>] = []
+    public var favoritesPath: [AppDestination<AppPushDestination>] = []
+    public var profilePath: [AppDestination<AppPushDestination>] = []
+    public var presentedSheet: AppDestination<AppSheetDestination>?
 
     public init() {}
 
-    public func navigate(_ destination: AppRoute) {
+    public func push(_ destination: AppPushDestination) {
         let wrapped = AppDestination(value: destination)
-        switch destination {
-        case .auth:
-            presentedSheet = wrapped
-        case .movieDetails:
-            switch selectedTab {
-            case .home:
-                homePath.append(wrapped)
-            case .favorites:
-                favoritesPath.append(wrapped)
-            case .profile:
-                profilePath.append(wrapped)
-            }
+        switch selectedTab {
+        case .home:
+            homePath.append(wrapped)
+        case .favorites:
+            favoritesPath.append(wrapped)
+        case .profile:
+            profilePath.append(wrapped)
         }
+    }
+
+    public func present(_ destination: AppSheetDestination) {
+        presentedSheet = AppDestination(value: destination)
     }
 
     public func selectTab(_ tab: AppTab) {

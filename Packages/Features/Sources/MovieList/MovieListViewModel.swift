@@ -44,7 +44,7 @@ public final class MovieListViewModel {
     }
 
     public func select(movieId: MovieID) {
-        router.navigate(.movieDetails(movieId))
+        router.push(.movieDetails(movieId))
     }
 
     private func search() async {
