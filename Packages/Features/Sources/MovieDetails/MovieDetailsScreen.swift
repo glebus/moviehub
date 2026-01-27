@@ -1,47 +1,12 @@
 import SwiftUI
 import Domain
-
-public struct MovieDetailsDependencies: Sendable {
-    public let movieId: MovieID
-    public let movieRepository: MovieRepositoryProtocol
-    public let sessionInteractor: SessionInteractor
-    public let favoritesInteractor: FavoritesInteractor
-    public let makeAuthScreen: @MainActor () -> AnyView
-
-    public init(
-        movieId: MovieID,
-        movieRepository: MovieRepositoryProtocol,
-        sessionInteractor: SessionInteractor,
-        favoritesInteractor: FavoritesInteractor,
-        makeAuthScreen: @escaping @MainActor () -> AnyView
-    ) {
-        self.movieId = movieId
-        self.movieRepository = movieRepository
-        self.sessionInteractor = sessionInteractor
-        self.favoritesInteractor = favoritesInteractor
-        self.makeAuthScreen = makeAuthScreen
-    }
-}
+import Router
+import DomainMocks
 
 public struct MovieDetailsScreen: View {
-    @State private var viewModel: MovieDetailsViewModel
-    private let dependencies: MovieDetailsDependencies
-
-    public init(dependencies: MovieDetailsDependencies) {
-        self.dependencies = dependencies
-        _viewModel = State(
-            initialValue: MovieDetailsViewModel(
-                movieId: dependencies.movieId,
-                movieRepository: dependencies.movieRepository,
-                sessionInteractor: dependencies.sessionInteractor,
-                favoritesInteractor: dependencies.favoritesInteractor
-            )
-        )
-    }
+    @State var viewModel: MovieDetailsViewModel
 
     public var body: some View {
-        @Bindable var viewModel = viewModel
-
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 switch viewModel.state {
@@ -112,11 +77,12 @@ public struct MovieDetailsScreen: View {
             .padding()
         }
         .navigationTitle("Details")
-        .sheet(isPresented: $viewModel.isAuthSheetPresented) {
-            dependencies.makeAuthScreen()
-        }
         .onAppear {
             viewModel.onAppear()
         }
     }
+}
+
+#Preview {
+    MovieDetailsBuilder.preview().build(movieId: MovieID("m1"))
 }

@@ -14,5 +14,3 @@ public struct MovieTilePresentationModel: Identifiable, Sendable {
         self.posterURL = posterURL
     }
 }
-
-// State lives in MovieListViewModel.

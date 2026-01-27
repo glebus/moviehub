@@ -13,16 +13,33 @@ let package = Package(
         .library(name: "MovieDetails", targets: ["MovieDetails"]),
         .library(name: "FavoriteList", targets: ["FavoriteList"]),
         .library(name: "Profile", targets: ["Profile"]),
-        .library(name: "Auth", targets: ["Auth"])
+        .library(name: "Auth", targets: ["Auth"]),
+        .library(name: "Router", targets: ["Router"])
     ],
     dependencies: [
         .package(path: "../Domain")
     ],
     targets: [
-        .target(name: "MovieList", dependencies: ["Domain"]),
-        .target(name: "MovieDetails", dependencies: ["Domain"]),
-        .target(name: "FavoriteList", dependencies: ["Domain"]),
-        .target(name: "Profile", dependencies: ["Domain"]),
-        .target(name: "Auth", dependencies: ["Domain"])
+        .target(name: "Router", dependencies: ["Domain"]),
+        .target(
+            name: "MovieList",
+            dependencies: ["Domain", "Router", .product(name: "DomainMocks", package: "Domain")]
+        ),
+        .target(
+            name: "MovieDetails",
+            dependencies: ["Domain", "Router", .product(name: "DomainMocks", package: "Domain")]
+        ),
+        .target(
+            name: "FavoriteList",
+            dependencies: ["Domain", "Router", .product(name: "DomainMocks", package: "Domain")]
+        ),
+        .target(
+            name: "Profile",
+            dependencies: ["Domain", "Router", .product(name: "DomainMocks", package: "Domain")]
+        ),
+        .target(
+            name: "Auth",
+            dependencies: ["Domain", "Router", .product(name: "DomainMocks", package: "Domain")]
+        )
     ]
 )

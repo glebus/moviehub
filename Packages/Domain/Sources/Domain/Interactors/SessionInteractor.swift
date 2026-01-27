@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-public final class SessionInteractor {
+public final class SessionInteractor: SessionInteractorProtocol {
     private let profileRepository: ProfileRepositoryProtocol
     private let subject: AsyncStreamSubject<User?>
     private var currentUserCache: User?

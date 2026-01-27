@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-public final class FavoritesInteractor {
+public final class FavoritesInteractor: FavoritesInteractorProtocol {
     private let favoritesRepository: FavoritesRepositoryProtocol
     private let sessionInteractor: SessionInteractor
     private let subject: AsyncStreamSubject<[Movie]>

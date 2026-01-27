@@ -7,14 +7,30 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		925AFD1B2F266279001FD1FE /* Data in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD1A2F266279001FD1FE /* Data */; };
+		925AFD1D2F266279001FD1FE /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD1C2F266279001FD1FE /* Auth */; };
+		925AFD1F2F266279001FD1FE /* FavoriteList in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD1E2F266279001FD1FE /* FavoriteList */; };
+		925AFD212F266279001FD1FE /* MovieDetails in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD202F266279001FD1FE /* MovieDetails */; };
+		925AFD232F266279001FD1FE /* MovieList in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD222F266279001FD1FE /* MovieList */; };
+		925AFD252F266279001FD1FE /* Profile in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD242F266279001FD1FE /* Profile */; };
+		925AFD272F266279001FD1FE /* Router in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD262F266279001FD1FE /* Router */; };
+		925AFD3F2F267B97001FD1FE /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 925AFD3E2F267B97001FD1FE /* Secrets.xcconfig */; };
 		9274121A2F24FA4F0027B3DE /* Domain in Frameworks */ = {isa = PBXBuildFile; productRef = 927412192F24FA4F0027B3DE /* Domain */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		92AEC2982F25131100DB7E0E /* moviehub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = moviehub.app; path = /Users/glebus/Developer/iOS/Home/moviehub/build/Debug/moviehub.app; sourceTree = "<absolute>"; };
+		925AFD2A2F2677E6001FD1FE /* moviehub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = moviehub.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		925AFD3E2F267B97001FD1FE /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		925AFD412F267C31001FD1FE /* Exceptions for "moviehub" folder in "moviehub" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9277BD142F24DA8B003E5D04 /* moviehub */;
+		};
 		927412282F24FC810027B3DE /* Exceptions for "Packages" folder in "moviehub" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -35,6 +51,9 @@
 		};
 		9277BD172F24DA8B003E5D04 /* moviehub */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				925AFD412F267C31001FD1FE /* Exceptions for "moviehub" folder in "moviehub" target */,
+			);
 			path = moviehub;
 			sourceTree = "<group>";
 		};
@@ -45,18 +64,35 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				925AFD252F266279001FD1FE /* Profile in Frameworks */,
+				925AFD212F266279001FD1FE /* MovieDetails in Frameworks */,
+				925AFD1F2F266279001FD1FE /* FavoriteList in Frameworks */,
+				925AFD1B2F266279001FD1FE /* Data in Frameworks */,
+				925AFD232F266279001FD1FE /* MovieList in Frameworks */,
 				9274121A2F24FA4F0027B3DE /* Domain in Frameworks */,
+				925AFD1D2F266279001FD1FE /* Auth in Frameworks */,
+				925AFD272F266279001FD1FE /* Router in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		925AFD192F266279001FD1FE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9277BD0C2F24DA8B003E5D04 = {
 			isa = PBXGroup;
 			children = (
+				925AFD3E2F267B97001FD1FE /* Secrets.xcconfig */,
 				9277BD172F24DA8B003E5D04 /* moviehub */,
 				927412272F24FC810027B3DE /* Packages */,
+				925AFD192F266279001FD1FE /* Frameworks */,
+				925AFD2A2F2677E6001FD1FE /* moviehub.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -82,9 +118,16 @@
 			name = moviehub;
 			packageProductDependencies = (
 				927412192F24FA4F0027B3DE /* Domain */,
+				925AFD1A2F266279001FD1FE /* Data */,
+				925AFD1C2F266279001FD1FE /* Auth */,
+				925AFD1E2F266279001FD1FE /* FavoriteList */,
+				925AFD202F266279001FD1FE /* MovieDetails */,
+				925AFD222F266279001FD1FE /* MovieList */,
+				925AFD242F266279001FD1FE /* Profile */,
+				925AFD262F266279001FD1FE /* Router */,
 			);
 			productName = moviehub;
-			productReference = 92AEC2982F25131100DB7E0E /* moviehub.app */;
+			productReference = 925AFD2A2F2677E6001FD1FE /* moviehub.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -129,6 +172,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				925AFD3F2F267B97001FD1FE /* Secrets.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -261,15 +305,19 @@
 		};
 		9277BD212F24DA8C003E5D04 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 925AFD3E2F267B97001FD1FE /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 825N53LAZA;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = moviehub/Info.plist;
+				INFOPLIST_KEY_TMDB_READ_TOKEN = "$(TMDB_READ_TOKEN)";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -303,15 +351,19 @@
 		};
 		9277BD222F24DA8C003E5D04 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 925AFD3E2F267B97001FD1FE /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 825N53LAZA;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = moviehub/Info.plist;
+				INFOPLIST_KEY_TMDB_READ_TOKEN = "$(TMDB_READ_TOKEN)";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -374,6 +426,34 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		925AFD1A2F266279001FD1FE /* Data */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Data;
+		};
+		925AFD1C2F266279001FD1FE /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Auth;
+		};
+		925AFD1E2F266279001FD1FE /* FavoriteList */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FavoriteList;
+		};
+		925AFD202F266279001FD1FE /* MovieDetails */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MovieDetails;
+		};
+		925AFD222F266279001FD1FE /* MovieList */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MovieList;
+		};
+		925AFD242F266279001FD1FE /* Profile */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Profile;
+		};
+		925AFD262F266279001FD1FE /* Router */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Router;
+		};
 		927412192F24FA4F0027B3DE /* Domain */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Domain;

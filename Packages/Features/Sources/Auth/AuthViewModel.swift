@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import Domain
+import Router
 
 @MainActor
 @Observable
@@ -15,10 +16,12 @@ public final class AuthViewModel {
     public var username: String
     public var state: State
 
-    private let sessionInteractor: SessionInteractor
+    private let sessionInteractor: SessionInteractorProtocol
+    private let router: AppRouterProtocol
 
-    public init(sessionInteractor: SessionInteractor) {
+    init(sessionInteractor: SessionInteractorProtocol, router: AppRouterProtocol) {
         self.sessionInteractor = sessionInteractor
+        self.router = router
         self.username = ""
         self.state = .idle
     }
@@ -38,6 +41,7 @@ public final class AuthViewModel {
         do {
             _ = try await sessionInteractor.login(username: trimmed)
             state = .success
+            router.dismissSheet()
         } catch {
             state = .error(error.localizedDescription)
         }

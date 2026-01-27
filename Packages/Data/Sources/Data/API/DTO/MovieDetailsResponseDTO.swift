@@ -1,43 +1,24 @@
 import Foundation
 
 struct MovieDetailsResponseDTO: Decodable, Sendable {
-    let short: ShortDTO?
+    let id: Int
+    let title: String
+    let overview: String?
+    let releaseDate: String?
+    let posterPath: String?
+    let genres: [GenreDTO]
 
-    struct ShortDTO: Decodable, Sendable {
-        let name: String?
-        let image: String?
-        let description: String?
-        let genre: [String]
-        let url: String?
+    struct GenreDTO: Decodable, Sendable {
+        let id: Int
+        let name: String
+    }
 
-        enum CodingKeys: String, CodingKey {
-            case name
-            case image
-            case description
-            case genre
-            case url
-        }
-
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            name = try container.decodeIfPresent(String.self, forKey: .name)
-            image = try container.decodeIfPresent(String.self, forKey: .image)
-            description = try container.decodeIfPresent(String.self, forKey: .description)
-            url = try container.decodeIfPresent(String.self, forKey: .url)
-            genre = try ShortDTO.decodeGenre(from: container)
-        }
-
-        private static func decodeGenre(from container: KeyedDecodingContainer<CodingKeys>) throws -> [String] {
-            if let stringValue = try container.decodeIfPresent(String.self, forKey: .genre) {
-                return stringValue
-                    .split(separator: ",")
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .filter { !$0.isEmpty }
-            }
-            if let arrayValue = try container.decodeIfPresent([String].self, forKey: .genre) {
-                return arrayValue
-            }
-            return []
-        }
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case overview
+        case releaseDate = "release_date"
+        case posterPath = "poster_path"
+        case genres
     }
 }

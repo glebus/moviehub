@@ -9,10 +9,12 @@ let package = Package(
         .macOS(.v15)
     ],
     products: [
-        .library(name: "Domain", targets: ["Domain"])
+        .library(name: "Domain", targets: ["Domain"]),
+        .library(name: "DomainMocks", targets: ["DomainMocks"])
     ],
     targets: [
         .target(name: "Domain"),
-        .testTarget(name: "DomainTests", dependencies: ["Domain"])
+        .target(name: "DomainMocks", dependencies: ["Domain"]),
+        .testTarget(name: "DomainTests", dependencies: ["Domain", "DomainMocks"])
     ]
 )

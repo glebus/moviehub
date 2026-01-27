@@ -5,57 +5,78 @@ public struct MovieRepository: MovieRepositoryProtocol {
     private let httpClient: HTTPClient
     private let decoder: JSONDecoder
     private let baseURL: URL
+    private let readAccessToken: String
+    private let apiVersionPath = "/3"
 
     public init(
         httpClient: HTTPClient = URLSessionHTTPClient(),
         decoder: JSONDecoder = JSONDecoder(),
-        baseURL: URL = URL(string: "https://imdb.iamidiotareyoutoo.com/search")!
+        baseURL: URL = URL(string: "https://api.themoviedb.org")!,
+        readAccessToken: String
     ) {
         self.httpClient = httpClient
         self.decoder = decoder
         self.baseURL = baseURL
+        self.readAccessToken = readAccessToken
     }
 
     public func search(query: String) async throws -> [Movie] {
-        let url = try makeURL(queryItems: [URLQueryItem(name: "q", value: query)])
-        let data = try await httpClient.get(url: url)
+        let url = try makeURL(
+            path: "/search/movie",
+            queryItems: [
+                URLQueryItem(name: "query", value: query),
+                URLQueryItem(name: "include_adult", value: "false")
+            ]
+        )
+        let data = try await httpClient.get(url: url, headers: authorizationHeaders())
         let response = try decoder.decode(MovieSearchResponseDTO.self, from: data)
-        return response.items.compactMap { item in
-            guard let id = item.imdbId, let title = item.title else {
-                return nil
-            }
-            return Movie(
-                id: MovieID(id),
-                title: title,
-                year: item.year,
-                posterURL: item.posterURL.flatMap(URL.init(string:))
+        return response.items.map { item in
+            Movie(
+                id: MovieID(String(item.id)),
+                title: item.title,
+                year: item.releaseDate.flatMap(parseYear),
+                posterURL: TMDbImageURLBuilder.posterURL(from: item.posterPath)
             )
         }
     }
 
     public func details(id: MovieID) async throws -> MovieDetails {
-        let url = try makeURL(queryItems: [URLQueryItem(name: "tt", value: id.rawValue)])
-        let data = try await httpClient.get(url: url)
+        let url = try makeURL(path: "/movie/\(id.rawValue)")
+        let data = try await httpClient.get(url: url, headers: authorizationHeaders())
         let response = try decoder.decode(MovieDetailsResponseDTO.self, from: data)
-        let details = response.short
         return MovieDetails(
             id: id,
-            title: details?.name ?? "",
-            posterURL: details?.image.flatMap(URL.init(string:)),
-            overview: details?.description,
-            genres: details?.genre ?? [],
-            imdbURL: details?.url.flatMap(URL.init(string:))
+            title: response.title,
+            posterURL: TMDbImageURLBuilder.posterURL(from: response.posterPath),
+            overview: response.overview,
+            genres: response.genres.map(\.name),
+            imdbURL: nil
         )
     }
 
-    private func makeURL(queryItems: [URLQueryItem]) throws -> URL {
+    private func makeURL(path: String, queryItems: [URLQueryItem] = []) throws -> URL {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             throw URLError(.badURL)
         }
+        components.path = apiVersionPath + path
         components.queryItems = queryItems
         guard let url = components.url else {
             throw URLError(.badURL)
         }
         return url
+    }
+
+    private func authorizationHeaders() -> [String: String] {
+        guard !readAccessToken.isEmpty else {
+            return [:]
+        }
+        return ["Authorization": "Bearer \(readAccessToken)"]
+    }
+
+    private func parseYear(from releaseDate: String) -> String? {
+        guard releaseDate.count >= 4 else {
+            return nil
+        }
+        return String(releaseDate.prefix(4))
     }
 }

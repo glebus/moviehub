@@ -1,30 +1,18 @@
 import SwiftUI
-import Domain
-
-public struct AuthDependencies: Sendable {
-    public let sessionInteractor: SessionInteractor
-
-    public init(sessionInteractor: SessionInteractor) {
-        self.sessionInteractor = sessionInteractor
-    }
-}
 
 public struct AuthScreen: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var viewModel: AuthViewModel
-
-    public init(dependencies: AuthDependencies) {
-        _viewModel = State(initialValue: AuthViewModel(sessionInteractor: dependencies.sessionInteractor))
-    }
+    @State var viewModel: AuthViewModel
 
     public var body: some View {
-        @Bindable var viewModel = viewModel
-
         NavigationStack {
-            Form {
-                Section("Username") {
-                    TextField("Username", text: $viewModel.username)
-                }
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Username")
+                    .font(.headline)
+
+                TextField("Username", text: $viewModel.username)
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
 
                 if case .error(let message) = viewModel.state {
                     Text(message)
@@ -37,7 +25,11 @@ public struct AuthScreen: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(viewModel.state == .submitting)
+
+                Spacer(minLength: 0)
             }
+            .frame(maxWidth: 480, alignment: .leading)
+            .padding()
             .navigationTitle("Login")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -53,4 +45,8 @@ public struct AuthScreen: View {
             }
         }
     }
+}
+
+#Preview {
+    AuthBuilder.preview().build()
 }

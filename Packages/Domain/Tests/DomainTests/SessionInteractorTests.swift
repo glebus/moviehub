@@ -1,5 +1,6 @@
 import Testing
 import Domain
+import DomainMocks
 
 @MainActor
 struct SessionInteractorTests {

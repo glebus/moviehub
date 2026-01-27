@@ -1,15 +1,15 @@
 import Foundation
 
 struct MovieSearchItemDTO: Decodable, Sendable {
-    let imdbId: String?
-    let title: String?
-    let year: String?
-    let posterURL: String?
+    let id: Int
+    let title: String
+    let releaseDate: String?
+    let posterPath: String?
 
     enum CodingKeys: String, CodingKey {
-        case imdbId = "#IMDB_ID"
-        case title = "#TITLE"
-        case year = "#YEAR"
-        case posterURL = "#IMG_POSTER"
+        case id
+        case title
+        case releaseDate = "release_date"
+        case posterPath = "poster_path"
     }
 }

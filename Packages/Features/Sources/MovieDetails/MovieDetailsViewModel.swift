@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import Domain
+import Router
 
 @MainActor
 @Observable
@@ -16,34 +17,35 @@ public final class MovieDetailsViewModel {
     public var isFavorite: Bool
     public var favoriteButtonEnabled: Bool
     public var favoriteButtonTitle: String
-    public var isAuthSheetPresented: Bool
     public var errorMessage: String?
 
     private let movieId: MovieID
     private let movieRepository: MovieRepositoryProtocol
-    private let sessionInteractor: SessionInteractor
-    private let favoritesInteractor: FavoritesInteractor
+    private let sessionInteractor: SessionInteractorProtocol
+    private let favoritesInteractor: FavoritesInteractorProtocol
+    private let router: AppRouterProtocol
 
     @ObservationIgnored nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
     @ObservationIgnored nonisolated(unsafe) private var favoritesTask: Task<Void, Never>?
     private var currentUser: User?
     private var movieDetails: MovieDetails?
 
-    public init(
+    init(
         movieId: MovieID,
         movieRepository: MovieRepositoryProtocol,
-        sessionInteractor: SessionInteractor,
-        favoritesInteractor: FavoritesInteractor
+        sessionInteractor: SessionInteractorProtocol,
+        favoritesInteractor: FavoritesInteractorProtocol,
+        router: AppRouterProtocol
     ) {
         self.movieId = movieId
         self.movieRepository = movieRepository
         self.sessionInteractor = sessionInteractor
         self.favoritesInteractor = favoritesInteractor
+        self.router = router
         self.state = .idle
         self.isFavorite = false
         self.favoriteButtonEnabled = false
         self.favoriteButtonTitle = "Add to favorites"
-        self.isAuthSheetPresented = false
         self.errorMessage = nil
         subscribeToSession()
         subscribeToFavorites()
@@ -108,7 +110,7 @@ public final class MovieDetailsViewModel {
     private func toggleFavorite() async {
         guard let details = movieDetails else { return }
         guard currentUser != nil else {
-            isAuthSheetPresented = true
+            router.navigate(.auth)
             return
         }
 

@@ -88,3 +88,6 @@ iOSInjectionProject/
 ### SwiftPackageManager ###
 xcuserdata
 *.xcodeproj
+
+# Secrets
+Secrets.xcconfig

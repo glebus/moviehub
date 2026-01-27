@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct moviehubApp: App {
+    private let container = AppContainer()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootTabView(container: container)
         }
     }
 }

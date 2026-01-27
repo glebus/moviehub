@@ -1,84 +1,53 @@
 import SwiftUI
 import Domain
-
-public struct FavoriteListDependencies: Sendable {
-    public let sessionInteractor: SessionInteractor
-    public let favoritesInteractor: FavoritesInteractor
-    public let makeMovieDetailsScreen: @MainActor (MovieID) -> AnyView
-    public let makeAuthScreen: @MainActor () -> AnyView
-
-    public init(
-        sessionInteractor: SessionInteractor,
-        favoritesInteractor: FavoritesInteractor,
-        makeMovieDetailsScreen: @escaping @MainActor (MovieID) -> AnyView,
-        makeAuthScreen: @escaping @MainActor () -> AnyView
-    ) {
-        self.sessionInteractor = sessionInteractor
-        self.favoritesInteractor = favoritesInteractor
-        self.makeMovieDetailsScreen = makeMovieDetailsScreen
-        self.makeAuthScreen = makeAuthScreen
-    }
-}
+import Router
+import DomainMocks
 
 public struct FavoriteListScreen: View {
-    @State private var viewModel: FavoriteListViewModel
-    private let dependencies: FavoriteListDependencies
-
-    public init(dependencies: FavoriteListDependencies) {
-        self.dependencies = dependencies
-        _viewModel = State(
-            initialValue: FavoriteListViewModel(
-                sessionInteractor: dependencies.sessionInteractor,
-                favoritesInteractor: dependencies.favoritesInteractor
-            )
-        )
-    }
+    @State var viewModel: FavoriteListViewModel
 
     public var body: some View {
-        @Bindable var viewModel = viewModel
-
-        NavigationStack {
-            Group {
-                switch viewModel.state {
-                case .loggedOut:
-                    VStack(spacing: 12) {
-                        Text("Not logged in")
-                            .font(.headline)
-                        Button("Login") {
-                            viewModel.loginTapped()
-                        }
-                        .buttonStyle(.borderedProminent)
+        Group {
+            switch viewModel.state {
+            case .loggedOut:
+                VStack {
+                    Text("Not logged in")
+                        .font(.headline)
+                    Button("Login") {
+                        viewModel.loginTapped()
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                case .loading:
-                    ProgressView()
-                case .loaded(let favorites):
-                    List(favorites, id: \.id) { movie in
-                        NavigationLink(value: movie.id) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(movie.title)
-                                    .font(.headline)
-                                if let year = movie.year {
-                                    Text(year)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .loading:
+                ProgressView()
+            case .loaded(let favorites):
+                List(favorites, id: \.id) { movie in
+                    Button {
+                        viewModel.select(movieId: movie.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(movie.title)
+                                .font(.headline)
+                            if let year = movie.year {
+                                Text(year)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
-                case .error(let message):
-                    Text(message)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                    .buttonStyle(.plain)
                 }
-            }
-            .navigationTitle("Favorites")
-            .navigationDestination(for: MovieID.self) { movieId in
-                dependencies.makeMovieDetailsScreen(movieId)
-            }
-            .sheet(isPresented: $viewModel.isAuthSheetPresented) {
-                dependencies.makeAuthScreen()
+            case .error(let message):
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
             }
         }
+        .navigationTitle("Favorites")
     }
+}
+
+#Preview {
+    FavoriteListBuilder.preview().build()
 }
