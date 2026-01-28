@@ -21,6 +21,7 @@
 		925AFD2A2F2677E6001FD1FE /* moviehub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = moviehub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		925AFD3E2F267B97001FD1FE /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		925AFD5A2F29447B001FD1FE /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		925AFD5C2F2A7EEA001FD1FE /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -94,6 +95,7 @@
 				925AFD192F266279001FD1FE /* Frameworks */,
 				925AFD2A2F2677E6001FD1FE /* moviehub.app */,
 				925AFD5A2F29447B001FD1FE /* README.md */,
+				925AFD5C2F2A7EEA001FD1FE /* AGENTS.md */,
 			);
 			sourceTree = "<group>";
 		};
