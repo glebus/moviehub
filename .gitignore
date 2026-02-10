@@ -91,3 +91,5 @@ xcuserdata
 
 # Secrets
 Secrets.xcconfig
+
+.claude/
