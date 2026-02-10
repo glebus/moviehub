@@ -3,6 +3,7 @@ import Domain
 import DomainMocks
 import Router
 import AuthButton
+import FavoriteListsManage
 @testable import Profile
 
 @MainActor
@@ -12,10 +13,21 @@ struct ProfileViewModelTests {
         let router = AppRouterMock()
         let session = SessionInteractorMock(currentUser: User(id: UserID("u1"), username: "alex"))
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
+        let listsRepository = FavoriteListsRepositoryMock()
+        let listsInteractor = FavoriteListsInteractor(
+            listsRepository: listsRepository,
+            sessionInteractor: session
+        )
+        let listsManageBuilder = FavoriteListsManageBuilder(
+            sessionInteractor: session,
+            favoriteListsInteractor: listsInteractor,
+            router: router
+        )
         let viewModel = ProfileViewModel(
             sessionInteractor: session,
             router: router,
-            authButtonBuilder: authButtonBuilder
+            authButtonBuilder: authButtonBuilder,
+            favoriteListsManageBuilder: listsManageBuilder
         )
 
         guard case .loggedIn(let username) = viewModel.state else {
@@ -30,10 +42,21 @@ struct ProfileViewModelTests {
         let router = AppRouterMock()
         let session = SessionInteractorMock(currentUser: User(id: UserID("u1"), username: "alex"))
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
+        let listsRepository = FavoriteListsRepositoryMock()
+        let listsInteractor = FavoriteListsInteractor(
+            listsRepository: listsRepository,
+            sessionInteractor: session
+        )
+        let listsManageBuilder = FavoriteListsManageBuilder(
+            sessionInteractor: session,
+            favoriteListsInteractor: listsInteractor,
+            router: router
+        )
         let viewModel = ProfileViewModel(
             sessionInteractor: session,
             router: router,
-            authButtonBuilder: authButtonBuilder
+            authButtonBuilder: authButtonBuilder,
+            favoriteListsManageBuilder: listsManageBuilder
         )
 
         await viewModel.logout()

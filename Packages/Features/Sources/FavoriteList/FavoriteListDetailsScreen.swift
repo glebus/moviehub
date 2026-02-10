@@ -3,8 +3,8 @@ import Domain
 import Router
 import AuthButton
 
-public struct FavoriteListScreen: View {
-    @State var viewModel: FavoriteListViewModel
+public struct FavoriteListDetailsScreen: View {
+    @State var viewModel: FavoriteListDetailsViewModel
 
     public var body: some View {
         Group {
@@ -14,22 +14,24 @@ public struct FavoriteListScreen: View {
                         .font(.headline)
                 }
             } else {
-                if viewModel.lists.isEmpty {
+                if viewModel.favorites.isEmpty {
                     VStack {
-                        Text("No lists")
+                        Text("No favorites")
                             .font(.headline)
                     }
                 } else {
-                    List(viewModel.lists, id: \.id) { list in
+                    List(viewModel.favorites, id: \.id) { movie in
                         Button {
-                            viewModel.select(listId: list.id)
+                            viewModel.select(movieId: movie.id)
                         } label: {
-                            HStack(spacing: 12) {
-                                Circle()
-                                    .fill(list.color.uiColor)
-                                    .frame(width: 14, height: 14)
-                                Text(list.name)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(movie.title)
                                     .font(.headline)
+                                if let year = movie.year {
+                                    Text(year)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                         .buttonStyle(.plain)
@@ -37,7 +39,7 @@ public struct FavoriteListScreen: View {
                 }
             }
         }
-        .navigationTitle("Lists")
+        .navigationTitle(viewModel.listName)
         .onAppear {
             viewModel.onAppear()
         }
@@ -45,8 +47,4 @@ public struct FavoriteListScreen: View {
             viewModel.authButtonBuilder.build()
         }
     }
-}
-
-#Preview {
-    FavoriteListBuilder.preview().build()
 }

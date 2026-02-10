@@ -17,6 +17,8 @@ public struct ProfileScreen: View {
                     viewModel.logoutTapped()
                 }
                 .buttonStyle(.bordered)
+
+                viewModel.favoriteListsManageBuilder.build()
             case .loggedOut:
                 Text("Not logged in")
                     .font(.headline)

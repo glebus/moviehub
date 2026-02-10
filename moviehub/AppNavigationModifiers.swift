@@ -2,6 +2,9 @@ import SwiftUI
 import Observation
 import Router
 import MovieDetails
+import FavoriteList
+import FavoriteListCreate
+import FavoriteListPicker
 import Auth
 import AuthButton
 
@@ -17,10 +20,20 @@ struct AppNavigationDestinationModifier: ViewModifier {
                 MovieDetailsBuilder(
                     movieRepository: container.movieRepository,
                     sessionInteractor: container.sessionInteractor,
-                    favoritesInteractor: container.favoritesInteractor,
+                    favoriteListsInteractor: container.favoriteListsInteractor,
+                    favoritesRepository: container.swiftDataStorage,
                     router: router,
                     authButtonBuilder: authButtonBuilder
                 ).build(movieId: movieId)
+            case .favoriteListDetails(let listId):
+                FavoriteListDetailsBuilder(
+                    listId: listId,
+                    sessionInteractor: container.sessionInteractor,
+                    favoriteListsInteractor: container.favoriteListsInteractor,
+                    favoritesRepository: container.swiftDataStorage,
+                    router: router,
+                    authButtonBuilder: authButtonBuilder
+                ).build()
             }
         }
     }
@@ -35,6 +48,26 @@ struct AppPresentationModifier: ViewModifier {
             switch destination.value {
             case .auth:
                 AuthBuilder(
+                    sessionInteractor: container.sessionInteractor,
+                    router: router
+                ).build()
+            case .favoriteListPicker(let details):
+                NavigationStack {
+                    FavoriteListPickerBuilder(
+                        movieDetails: details,
+                        sessionInteractor: container.sessionInteractor,
+                        favoriteListsInteractor: container.favoriteListsInteractor,
+                        favoritesRepository: container.swiftDataStorage,
+                        router: router,
+                        authButtonBuilder: AuthButtonBuilder(
+                            sessionInteractor: container.sessionInteractor,
+                            router: router
+                        )
+                    ).build()
+                }
+            case .favoriteListCreate:
+                FavoriteListCreateBuilder(
+                    favoriteListsInteractor: container.favoriteListsInteractor,
                     sessionInteractor: container.sessionInteractor,
                     router: router
                 ).build()

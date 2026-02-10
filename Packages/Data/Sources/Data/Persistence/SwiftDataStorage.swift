@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 import Domain
 
-public actor SwiftDataStorage: ProfileRepositoryProtocol, FavoritesRepositoryProtocol {
+public actor SwiftDataStorage: ProfileRepositoryProtocol, FavoritesRepositoryProtocol, FavoriteListsRepositoryProtocol {
     private let container: ModelContainer
     private let context: ModelContext
 
@@ -32,27 +32,38 @@ public actor SwiftDataStorage: ProfileRepositoryProtocol, FavoritesRepositoryPro
         return mapUser(user)
     }
 
-    public func fetchFavorites(userId: UserID) async throws -> [Movie] {
-        let descriptor = FetchDescriptor<SDFavorite>(predicate: #Predicate { $0.userId == userId.rawValue })
+    public func fetchFavorites(userId: UserID, listId: FavoriteListID) async throws -> [Movie] {
+        let descriptor = FetchDescriptor<SDFavorite>(
+            predicate: #Predicate { $0.userId == userId.rawValue && $0.listId == listId.rawValue }
+        )
         let results = try context.fetch(descriptor)
         return results.map(mapFavorite)
     }
 
-    public func existsFavorite(userId: UserID, movieId: MovieID) async throws -> Bool {
-        let descriptor = FetchDescriptor<SDFavorite>(predicate: #Predicate { $0.userId == userId.rawValue && $0.movieId == movieId.rawValue })
+    public func favoriteListId(userId: UserID, movieId: MovieID) async throws -> FavoriteListID? {
+        let descriptor = FetchDescriptor<SDFavorite>(
+            predicate: #Predicate { $0.userId == userId.rawValue && $0.movieId == movieId.rawValue }
+        )
         let results = try context.fetch(descriptor)
-        return results.first != nil
+        return results.first.map { FavoriteListID($0.listId) }
     }
 
-    public func addFavorite(userId: UserID, movie: MovieDetails) async throws {
-        let descriptor = FetchDescriptor<SDFavorite>(predicate: #Predicate { $0.userId == userId.rawValue && $0.movieId == movie.id.rawValue })
+    public func addFavorite(userId: UserID, movie: MovieDetails, listId: FavoriteListID) async throws {
+        let descriptor = FetchDescriptor<SDFavorite>(
+            predicate: #Predicate { $0.userId == userId.rawValue && $0.movieId == movie.id.rawValue }
+        )
         let results = try context.fetch(descriptor)
-        if results.first != nil {
+        if let existing = results.first {
+            if existing.listId != listId.rawValue {
+                existing.listId = listId.rawValue
+                try context.save()
+            }
             return
         }
 
         let favorite = SDFavorite(
             userId: userId.rawValue,
+            listId: listId.rawValue,
             movieId: movie.id.rawValue,
             title: movie.title,
             year: nil,
@@ -64,12 +75,65 @@ public actor SwiftDataStorage: ProfileRepositoryProtocol, FavoritesRepositoryPro
     }
 
     public func removeFavorite(userId: UserID, movieId: MovieID) async throws {
-        let descriptor = FetchDescriptor<SDFavorite>(predicate: #Predicate { $0.userId == userId.rawValue && $0.movieId == movieId.rawValue })
+        let descriptor = FetchDescriptor<SDFavorite>(
+            predicate: #Predicate { $0.userId == userId.rawValue && $0.movieId == movieId.rawValue }
+        )
         let results = try context.fetch(descriptor)
         for item in results {
             context.delete(item)
         }
         if !results.isEmpty {
+            try context.save()
+        }
+    }
+
+    public func fetchLists(userId: UserID) async throws -> [FavoriteList] {
+        let descriptor = FetchDescriptor<SDFavoriteList>(predicate: #Predicate { $0.userId == userId.rawValue })
+        let results = try context.fetch(descriptor)
+        return results.map(mapFavoriteList)
+    }
+
+    public func createList(userId: UserID, name: String, color: FavoriteListColor) async throws -> FavoriteList {
+        let list = SDFavoriteList(
+            id: UUID().uuidString,
+            userId: userId.rawValue,
+            name: name,
+            colorRaw: color.rawValue,
+            createdAt: Date()
+        )
+        context.insert(list)
+        try context.save()
+        return mapFavoriteList(list)
+    }
+
+    public func renameList(userId: UserID, listId: FavoriteListID, name: String) async throws {
+        let descriptor = FetchDescriptor<SDFavoriteList>(
+            predicate: #Predicate { $0.userId == userId.rawValue && $0.id == listId.rawValue }
+        )
+        let results = try context.fetch(descriptor)
+        if let list = results.first {
+            list.name = name
+            try context.save()
+        }
+    }
+
+    public func deleteList(userId: UserID, listId: FavoriteListID) async throws {
+        let listDescriptor = FetchDescriptor<SDFavoriteList>(
+            predicate: #Predicate { $0.userId == userId.rawValue && $0.id == listId.rawValue }
+        )
+        let listResults = try context.fetch(listDescriptor)
+        for list in listResults {
+            context.delete(list)
+        }
+
+        let favoritesDescriptor = FetchDescriptor<SDFavorite>(
+            predicate: #Predicate { $0.userId == userId.rawValue && $0.listId == listId.rawValue }
+        )
+        let favoriteResults = try context.fetch(favoritesDescriptor)
+        for favorite in favoriteResults {
+            context.delete(favorite)
+        }
+        if !listResults.isEmpty || !favoriteResults.isEmpty {
             try context.save()
         }
     }
@@ -84,6 +148,15 @@ public actor SwiftDataStorage: ProfileRepositoryProtocol, FavoritesRepositoryPro
             title: favorite.title,
             year: favorite.year,
             posterURL: favorite.posterURL.flatMap(URL.init(string:))
+        )
+    }
+
+    private func mapFavoriteList(_ list: SDFavoriteList) -> FavoriteList {
+        FavoriteList(
+            id: FavoriteListID(list.id),
+            name: list.name,
+            color: FavoriteListColor(rawValue: list.colorRaw) ?? .slate,
+            createdAt: list.createdAt
         )
     }
 }

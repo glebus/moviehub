@@ -11,7 +11,12 @@ struct MovieDetailsViewModelTests {
     func onAppearLoadsDetails() async {
         let router = AppRouterMock()
         let session = SessionInteractorMock()
-        let favorites = FavoritesInteractorMock()
+        let listsRepository = FavoriteListsRepositoryMock()
+        let listsInteractor = FavoriteListsInteractor(
+            listsRepository: listsRepository,
+            sessionInteractor: session
+        )
+        let favoritesRepository = FavoritesRepositoryMock()
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let repo = MovieRepositoryMock(
             detailsResult: MovieDetails(
@@ -27,7 +32,8 @@ struct MovieDetailsViewModelTests {
             movieId: MovieID("10"),
             movieRepository: repo,
             sessionInteractor: session,
-            favoritesInteractor: favorites,
+            favoriteListsInteractor: listsInteractor,
+            favoritesRepository: favoritesRepository,
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -45,7 +51,12 @@ struct MovieDetailsViewModelTests {
     func favoriteWithoutAuthPresentsAuthSheet() async {
         let router = AppRouterMock()
         let session = SessionInteractorMock(currentUser: nil)
-        let favorites = FavoritesInteractorMock()
+        let listsRepository = FavoriteListsRepositoryMock()
+        let listsInteractor = FavoriteListsInteractor(
+            listsRepository: listsRepository,
+            sessionInteractor: session
+        )
+        let favoritesRepository = FavoritesRepositoryMock()
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let repo = MovieRepositoryMock(
             detailsResult: MovieDetails(
@@ -61,7 +72,8 @@ struct MovieDetailsViewModelTests {
             movieId: MovieID("10"),
             movieRepository: repo,
             sessionInteractor: session,
-            favoritesInteractor: favorites,
+            favoriteListsInteractor: listsInteractor,
+            favoritesRepository: favoritesRepository,
             router: router,
             authButtonBuilder: authButtonBuilder
         )

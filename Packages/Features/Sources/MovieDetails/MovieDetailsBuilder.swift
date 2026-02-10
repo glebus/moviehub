@@ -8,20 +8,23 @@ import DomainMocks
 public struct MovieDetailsBuilder {
     private let movieRepository: MovieRepositoryProtocol
     private let sessionInteractor: SessionInteractorProtocol
-    private let favoritesInteractor: FavoritesInteractorProtocol
+    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
+    private let favoritesRepository: FavoritesRepositoryProtocol
     private let router: AppRouterProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
         movieRepository: MovieRepositoryProtocol,
         sessionInteractor: SessionInteractorProtocol,
-        favoritesInteractor: FavoritesInteractorProtocol,
+        favoriteListsInteractor: FavoriteListsInteractorProtocol,
+        favoritesRepository: FavoritesRepositoryProtocol,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieRepository = movieRepository
         self.sessionInteractor = sessionInteractor
-        self.favoritesInteractor = favoritesInteractor
+        self.favoriteListsInteractor = favoriteListsInteractor
+        self.favoritesRepository = favoritesRepository
         self.router = router
         self.authButtonBuilder = authButtonBuilder
     }
@@ -31,7 +34,8 @@ public struct MovieDetailsBuilder {
             movieId: movieId,
             movieRepository: movieRepository,
             sessionInteractor: sessionInteractor,
-            favoritesInteractor: favoritesInteractor,
+            favoriteListsInteractor: favoriteListsInteractor,
+            favoritesRepository: favoritesRepository,
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -40,12 +44,13 @@ public struct MovieDetailsBuilder {
 
     public static func preview(movieId: MovieID = MovieID("m1")) -> MovieDetailsBuilder {
         let router = AppRouterMock()
-        let session = SessionInteractorMock()
-        let favorites = FavoritesInteractorMock(
-            favorites: [
-                Movie(id: movieId, title: "Preview Favorite", year: "2020", posterURL: nil)
-            ]
+        let session = SessionInteractorMock(currentUser: User(id: UserID("user"), username: "user"))
+        let listsRepository = FavoriteListsRepositoryMock()
+        let listsInteractor = FavoriteListsInteractor(
+            listsRepository: listsRepository,
+            sessionInteractor: session
         )
+        let favoritesRepository = FavoritesRepositoryMock()
         let movieRepo = MovieRepositoryMock(
             detailsResult: MovieDetails(
                 id: movieId,
@@ -56,11 +61,18 @@ public struct MovieDetailsBuilder {
                 imdbURL: nil
             )
         )
+        Task {
+            await listsRepository.seedLists([
+                FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date())
+            ], for: UserID("user"))
+            try? await listsInteractor.refresh()
+        }
 
         return MovieDetailsBuilder(
             movieRepository: movieRepo,
             sessionInteractor: session,
-            favoritesInteractor: favorites,
+            favoriteListsInteractor: listsInteractor,
+            favoritesRepository: favoritesRepository,
             router: router,
             authButtonBuilder: AuthButtonBuilder.preview()
         )

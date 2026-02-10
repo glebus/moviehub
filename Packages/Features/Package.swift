@@ -12,6 +12,9 @@ let package = Package(
         .library(name: "MovieList", targets: ["MovieList"]),
         .library(name: "MovieDetails", targets: ["MovieDetails"]),
         .library(name: "FavoriteList", targets: ["FavoriteList"]),
+        .library(name: "FavoriteListCreate", targets: ["FavoriteListCreate"]),
+        .library(name: "FavoriteListPicker", targets: ["FavoriteListPicker"]),
+        .library(name: "FavoriteListsManage", targets: ["FavoriteListsManage"]),
         .library(name: "Profile", targets: ["Profile"]),
         .library(name: "Auth", targets: ["Auth"]),
         .library(name: "AuthButton", targets: ["AuthButton"]),
@@ -40,8 +43,20 @@ let package = Package(
             dependencies: ["Domain", "Router", "AuthButton", "Utilities", .product(name: "DomainMocks", package: "Domain")]
         ),
         .target(
+            name: "FavoriteListCreate",
+            dependencies: ["Domain", "Router"]
+        ),
+        .target(
+            name: "FavoriteListPicker",
+            dependencies: ["Domain", "Router", "AuthButton", "Utilities"]
+        ),
+        .target(
+            name: "FavoriteListsManage",
+            dependencies: ["Domain", "Router", "Utilities"]
+        ),
+        .target(
             name: "Profile",
-            dependencies: ["Domain", "Router", "AuthButton", "Utilities", .product(name: "DomainMocks", package: "Domain")]
+            dependencies: ["Domain", "Router", "AuthButton", "Utilities", "FavoriteListsManage", .product(name: "DomainMocks", package: "Domain")]
         ),
         .target(
             name: "Auth",
@@ -53,6 +68,9 @@ let package = Package(
                 "MovieList",
                 "MovieDetails",
                 "FavoriteList",
+                "FavoriteListCreate",
+                "FavoriteListPicker",
+                "FavoriteListsManage",
                 "Profile",
                 "Auth",
                 "AuthButton",

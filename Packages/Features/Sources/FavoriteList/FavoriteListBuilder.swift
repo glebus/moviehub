@@ -7,18 +7,18 @@ import DomainMocks
 @MainActor
 public struct FavoriteListBuilder {
     private let sessionInteractor: SessionInteractorProtocol
-    private let favoritesInteractor: FavoritesInteractorProtocol
+    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
     private let router: AppRouterProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
         sessionInteractor: SessionInteractorProtocol,
-        favoritesInteractor: FavoritesInteractorProtocol,
+        favoriteListsInteractor: FavoriteListsInteractorProtocol,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.sessionInteractor = sessionInteractor
-        self.favoritesInteractor = favoritesInteractor
+        self.favoriteListsInteractor = favoriteListsInteractor
         self.router = router
         self.authButtonBuilder = authButtonBuilder
     }
@@ -26,7 +26,7 @@ public struct FavoriteListBuilder {
     public func build() -> FavoriteListScreen {
         let viewModel = FavoriteListViewModel(
             sessionInteractor: sessionInteractor,
-            favoritesInteractor: favoritesInteractor,
+            favoriteListsInteractor: favoriteListsInteractor,
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -35,17 +35,23 @@ public struct FavoriteListBuilder {
 
     public static func preview() -> FavoriteListBuilder {
         let router = AppRouterMock()
-        let session = SessionInteractorMock()
-        let favorites = FavoritesInteractorMock(
-            favorites: [
-                Movie(id: MovieID("m1"), title: "Preview Favorite", year: "2020", posterURL: nil),
-                Movie(id: MovieID("m2"), title: "Another Favorite", year: "2019", posterURL: nil)
-            ]
+        let session = SessionInteractorMock(currentUser: User(id: UserID("user"), username: "user"))
+        let listsRepository = FavoriteListsRepositoryMock()
+        let listsInteractor = FavoriteListsInteractor(
+            listsRepository: listsRepository,
+            sessionInteractor: session
         )
+        Task {
+            await listsRepository.seedLists([
+                FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date()),
+                FavoriteList(id: FavoriteListID("l2"), name: "Drama", color: .indigo, createdAt: Date())
+            ], for: UserID("user"))
+            try? await listsInteractor.refresh()
+        }
 
         return FavoriteListBuilder(
             sessionInteractor: session,
-            favoritesInteractor: favorites,
+            favoriteListsInteractor: listsInteractor,
             router: router,
             authButtonBuilder: AuthButtonBuilder.preview()
         )

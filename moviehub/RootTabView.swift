@@ -3,6 +3,7 @@ import Domain
 import MovieList
 import MovieDetails
 import FavoriteList
+import FavoriteListsManage
 import Profile
 import Auth
 import Router
@@ -39,7 +40,7 @@ struct RootTabView: View {
             NavigationStack(path: $router.favoritesPath) {
                 FavoriteListBuilder(
                     sessionInteractor: container.sessionInteractor,
-                    favoritesInteractor: container.favoritesInteractor,
+                    favoriteListsInteractor: container.favoriteListsInteractor,
                     router: router,
                     authButtonBuilder: authButtonBuilder
                 ).build()
@@ -58,7 +59,12 @@ struct RootTabView: View {
                 ProfileBuilder(
                     sessionInteractor: container.sessionInteractor,
                     router: router,
-                    authButtonBuilder: authButtonBuilder
+                    authButtonBuilder: authButtonBuilder,
+                    favoriteListsManageBuilder: FavoriteListsManageBuilder(
+                        sessionInteractor: container.sessionInteractor,
+                        favoriteListsInteractor: container.favoriteListsInteractor,
+                        router: router
+                    )
                 ).build()
                 .appNavigationDestination(
                     container: container,

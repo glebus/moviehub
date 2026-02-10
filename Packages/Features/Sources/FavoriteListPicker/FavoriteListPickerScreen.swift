@@ -3,8 +3,8 @@ import Domain
 import Router
 import AuthButton
 
-public struct FavoriteListScreen: View {
-    @State var viewModel: FavoriteListViewModel
+public struct FavoriteListPickerScreen: View {
+    @State var viewModel: FavoriteListPickerViewModel
 
     public var body: some View {
         Group {
@@ -16,7 +16,7 @@ public struct FavoriteListScreen: View {
             } else {
                 if viewModel.lists.isEmpty {
                     VStack {
-                        Text("No lists")
+                        Text("No lists yet")
                             .font(.headline)
                     }
                 } else {
@@ -37,16 +37,22 @@ public struct FavoriteListScreen: View {
                 }
             }
         }
-        .navigationTitle("Lists")
+        .navigationTitle("Pick a List")
         .onAppear {
             viewModel.onAppear()
         }
         .toolbar {
             viewModel.authButtonBuilder.build()
         }
+        .alert("Couldn't add favorite", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
-}
-
-#Preview {
-    FavoriteListBuilder.preview().build()
 }

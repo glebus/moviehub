@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 import Domain
 import DomainMocks
@@ -11,11 +12,15 @@ struct FavoriteListViewModelTests {
     func idleStateWhenNoUser() async {
         let router = AppRouterMock()
         let session = SessionInteractorMock(currentUser: nil)
-        let favorites = FavoritesInteractorMock()
+        let listsRepository = FavoriteListsRepositoryMock()
+        let listsInteractor = FavoriteListsInteractor(
+            listsRepository: listsRepository,
+            sessionInteractor: session
+        )
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let viewModel = FavoriteListViewModel(
             sessionInteractor: session,
-            favoritesInteractor: favorites,
+            favoriteListsInteractor: listsInteractor,
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -30,23 +35,27 @@ struct FavoriteListViewModelTests {
     func loadedStateWhenUserAndFavoritesPresent() async {
         let router = AppRouterMock()
         let session = SessionInteractorMock(currentUser: nil)
-        let favorites = FavoritesInteractorMock()
+        let listsRepository = FavoriteListsRepositoryMock()
+        let listsInteractor = FavoriteListsInteractor(
+            listsRepository: listsRepository,
+            sessionInteractor: session
+        )
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let viewModel = FavoriteListViewModel(
             sessionInteractor: session,
-            favoritesInteractor: favorites,
+            favoriteListsInteractor: listsInteractor,
             router: router,
             authButtonBuilder: authButtonBuilder
         )
 
         viewModel.currentUser = User(id: UserID("u1"), username: "alex")
-        viewModel.favorites = [
-            Movie(id: MovieID("m1"), title: "Fav 1", year: "2020", posterURL: nil),
-            Movie(id: MovieID("m2"), title: "Fav 2", year: "2019", posterURL: nil)
+        viewModel.lists = [
+            FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date()),
+            FavoriteList(id: FavoriteListID("l2"), name: "Drama", color: .indigo, createdAt: Date())
         ]
 
         guard case .loaded(let items) = viewModel.state else {
-            fail("Expected loaded state for favorites")
+            fail("Expected loaded state for lists")
             return
         }
         #expect(items.count == 2)

@@ -4,6 +4,7 @@ import SwiftData
 @Model
 final class SDFavorite {
     var userId: String
+    var listId: String
     var movieId: String
     var title: String
     var year: String?
@@ -12,6 +13,7 @@ final class SDFavorite {
 
     init(
         userId: String,
+        listId: String,
         movieId: String,
         title: String,
         year: String?,
@@ -19,6 +21,7 @@ final class SDFavorite {
         createdAt: Date
     ) {
         self.userId = userId
+        self.listId = listId
         self.movieId = movieId
         self.title = title
         self.year = year

@@ -11,8 +11,11 @@ public struct AppDestination<Value: Hashable & Sendable>: Identifiable, Equatabl
 
 public enum AppPushDestination: Hashable, Sendable {
     case movieDetails(MovieID)
+    case favoriteListDetails(FavoriteListID)
 }
 
 public enum AppSheetDestination: Hashable, Sendable {
     case auth
+    case favoriteListPicker(MovieDetails)
+    case favoriteListCreate
 }

@@ -15,3 +15,11 @@ public struct UserID: Hashable, Codable, Sendable {
         self.rawValue = rawValue
     }
 }
+
+public struct FavoriteListID: Hashable, Codable, Sendable {
+    public let rawValue: String
+
+    public init(_ rawValue: String) {
+        self.rawValue = rawValue
+    }
+}

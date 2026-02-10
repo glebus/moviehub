@@ -3,6 +3,7 @@ import Observation
 import Domain
 import Router
 import AuthButton
+import FavoriteListsManage
 import Utilities
 
 @MainActor
@@ -20,16 +21,19 @@ public final class ProfileViewModel {
     private let sessionInteractor: SessionInteractorProtocol
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
+    public let favoriteListsManageBuilder: FavoriteListsManageBuilder
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
 
     init(
         sessionInteractor: SessionInteractorProtocol,
         router: AppRouterProtocol,
-        authButtonBuilder: AuthButtonBuilder
+        authButtonBuilder: AuthButtonBuilder,
+        favoriteListsManageBuilder: FavoriteListsManageBuilder
     ) {
         self.sessionInteractor = sessionInteractor
         self.router = router
         self.authButtonBuilder = authButtonBuilder
+        self.favoriteListsManageBuilder = favoriteListsManageBuilder
         self.state = .loggedOut
         self.isAuthSheetPresented = false
         self.errorMessage = nil

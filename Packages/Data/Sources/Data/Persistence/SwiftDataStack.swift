@@ -7,7 +7,7 @@ public struct SwiftDataStack: Sendable {
     public init(inMemory: Bool) {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: inMemory)
         do {
-            container = try ModelContainer(for: SDUser.self, SDFavorite.self, configurations: configuration)
+            container = try ModelContainer(for: SDUser.self, SDFavorite.self, SDFavoriteList.self, configurations: configuration)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }

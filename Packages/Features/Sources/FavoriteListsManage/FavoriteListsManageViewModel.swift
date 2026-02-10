@@ -1,53 +1,37 @@
-import Foundation
 import Observation
 import Domain
 import Router
-import AuthButton
 import Utilities
 
 @MainActor
 @Observable
-public final class FavoriteListViewModel {
-    public enum State: Sendable {
-        case idle
-        case loaded([FavoriteList])
-        case error(String)
-    }
-
-    public var state: State {
-        if currentUser == nil {
-            return .idle
-        }
-        return .loaded(lists)
-    }
-
-    public var lists: [FavoriteList] = []
+public final class FavoriteListsManageViewModel {
+    public var lists: [FavoriteList]
     public var currentUser: User?
+    public var errorMessage: String?
 
     private let sessionInteractor: SessionInteractorProtocol
     private let favoriteListsInteractor: FavoriteListsInteractorProtocol
     private let router: AppRouterProtocol
-    public let authButtonBuilder: AuthButtonBuilder
 
-    @ObservationIgnored private var profileTask: Task<Void, Never>?
+    @ObservationIgnored private var sessionTask: Task<Void, Never>?
     @ObservationIgnored private var listsTask: Task<Void, Never>?
 
     init(
         sessionInteractor: SessionInteractorProtocol,
         favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        router: AppRouterProtocol,
-        authButtonBuilder: AuthButtonBuilder
+        router: AppRouterProtocol
     ) {
         self.sessionInteractor = sessionInteractor
         self.favoriteListsInteractor = favoriteListsInteractor
         self.router = router
-        self.authButtonBuilder = authButtonBuilder
         self.lists = favoriteListsInteractor.lists
         self.currentUser = sessionInteractor.currentUser
+        self.errorMessage = nil
     }
 
     deinit {
-        profileTask?.cancel()
+        sessionTask?.cancel()
         listsTask?.cancel()
     }
 
@@ -57,13 +41,21 @@ public final class FavoriteListViewModel {
         Task { await refreshListsIfNeeded() }
     }
 
-    public func select(listId: FavoriteListID) {
-        router.push(.favoriteListDetails(listId))
+    public func addTapped() {
+        router.present(.favoriteListCreate)
+    }
+
+    public func rename(listId: FavoriteListID, name: String) {
+        Task { await renameList(listId: listId, name: name) }
+    }
+
+    public func delete(listId: FavoriteListID) {
+        Task { await deleteList(listId: listId) }
     }
 
     private func subscribeToSession() {
-        profileTask?.cancel()
-        profileTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
+        sessionTask?.cancel()
+        sessionTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
             self?.currentUser = user
         }
     }
@@ -78,5 +70,22 @@ public final class FavoriteListViewModel {
     private func refreshListsIfNeeded() async {
         guard currentUser != nil else { return }
         try? await favoriteListsInteractor.refresh()
+    }
+
+    private func renameList(listId: FavoriteListID, name: String) async {
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        do {
+            try await favoriteListsInteractor.rename(listId: listId, name: name)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func deleteList(listId: FavoriteListID) async {
+        do {
+            try await favoriteListsInteractor.delete(listId: listId)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

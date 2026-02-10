@@ -6,7 +6,7 @@ final class AppContainer {
     let movieRepository: MovieRepository
     let swiftDataStorage: SwiftDataStorage
     let sessionInteractor: SessionInteractor
-    let favoritesInteractor: FavoritesInteractor
+    let favoriteListsInteractor: FavoriteListsInteractor
 
     init() {
         let httpClient = URLSessionHTTPClient()
@@ -19,8 +19,8 @@ final class AppContainer {
         self.swiftDataStorage = SwiftDataStorage(container: stack.container)
 
         self.sessionInteractor = SessionInteractor(profileRepository: swiftDataStorage)
-        self.favoritesInteractor = FavoritesInteractor(
-            favoritesRepository: swiftDataStorage,
+        self.favoriteListsInteractor = FavoriteListsInteractor(
+            listsRepository: swiftDataStorage,
             sessionInteractor: sessionInteractor
         )
     }
