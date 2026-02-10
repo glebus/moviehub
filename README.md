@@ -18,17 +18,22 @@ In practice, `Features` can become iOS‑specific (SwiftUI or snapshot tests), a
 The minimum goal is to keep `Domain` cross‑platform; for `Data` we can split iOS‑specific parts into a separate package if needed.
 
 ### Layer dependencies
-- `Domain` has **no dependencies**.
+- `Utilities` has **no dependencies** (cross-platform helpers).
+- `Domain` depends **only on Utilities**.
 - `Data` depends **only on Domain**.
-- `Features` depends **only on Domain** and does **not** know about `Data`.
+- `Features` depends **only on Domain and Utilities** and does **not** know about `Data`.
 - `App` knows about all layers and composes them together.
 
 ### Layer responsibilities
+**Utilities**
+- Cross-platform helpers shared across packages
+- `observeChanges` — loop-based observation helper for subscribing to `@Observable` properties
+
 **Domain**
 - Business logic and data state (e.g., current user) not tied to UI
 - Models, errors, utilities
 - Protocols for data access
-- Interactors (data state + `AsyncStream`)
+- Interactors (data state + Observation via `observeChanges`)
 - `DomainMocks` for previews/tests (kept here for convenience)
 
 **Data**
@@ -57,6 +62,7 @@ graph TD
     Router[Router]
     Domain[Domain]
     Data[Data]
+    Utilities[Utilities]
 
     App --> Features
     App --> Data
@@ -64,10 +70,13 @@ graph TD
 
     Features --> Domain
     Features --> Router
+    Features --> Utilities
 
     Router --> Domain
 
     Data --> Domain
+
+    Domain --> Utilities
 ```
 
 ## Navigation
@@ -105,8 +114,16 @@ cd ../Data && swift test
 cd ../Features && swift test
 ```
 
+Tests use the **direct await** pattern: ViewModels expose sync methods for SwiftUI (e.g., `loginTapped()`) that wrap internal async methods (e.g., `login()`). Tests call the async methods directly via `@testable import`, then assert final state — no polling, timeouts, or observation tracking needed.
+
+```swift
+await viewModel.login()
+#expect(viewModel.state == .success)
+```
+
 ## Notes
 - Minimum platforms: iOS 17, macOS 15
 - No Combine
 - Data state lives in Domain Interactors
 - View state lives in ViewModels
+- Observation subscriptions use `observeChanges` from Utilities (not manual `withObservationTracking` loops)

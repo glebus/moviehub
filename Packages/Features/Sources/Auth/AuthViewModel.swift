@@ -30,7 +30,7 @@ public final class AuthViewModel {
         Task { await login() }
     }
 
-    private func login() async {
+    func login() async {
         let trimmed = username.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             state = .error("Please enter a username")

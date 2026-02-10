@@ -3,6 +3,7 @@ import Observation
 import Domain
 import Router
 import AuthButton
+import Utilities
 
 @MainActor
 @Observable
@@ -51,6 +52,7 @@ public final class MovieDetailsViewModel {
         self.favoriteButtonEnabled = false
         self.favoriteButtonTitle = "Add to favorites"
         self.errorMessage = nil
+        applySession(sessionInteractor.currentUser)
         subscribeToSession()
         subscribeToFavorites()
     }
@@ -68,7 +70,7 @@ public final class MovieDetailsViewModel {
         Task { await toggleFavorite() }
     }
 
-    private func loadDetails() async {
+    func loadDetails() async {
         state = .loading
         errorMessage = nil
         do {
@@ -90,28 +92,30 @@ public final class MovieDetailsViewModel {
     }
 
     private func subscribeToSession() {
-        sessionTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            for await user in sessionInteractor.currentUserStream {
-                self.currentUser = user
-                self.favoriteButtonEnabled = user != nil
-            }
+        sessionTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
+            self?.applySession(user)
         }
     }
 
     private func subscribeToFavorites() {
-        favoritesTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            for await favorites in favoritesInteractor.favoritesStream {
-                if let details = movieDetails {
-                    self.isFavorite = favorites.contains { $0.id == details.id }
-                    self.updateFavoriteButtonTitle()
-                }
-            }
+        favoritesTask = observeChanges({ [favoritesInteractor] in favoritesInteractor.favorites }) { [weak self] favorites in
+            self?.applyFavorites(favorites)
         }
     }
 
-    private func toggleFavorite() async {
+    private func applySession(_ user: User?) {
+        currentUser = user
+        favoriteButtonEnabled = user != nil
+    }
+
+    private func applyFavorites(_ favorites: [Movie]) {
+        if let details = movieDetails {
+            isFavorite = favorites.contains { $0.id == details.id }
+            updateFavoriteButtonTitle()
+        }
+    }
+
+    func toggleFavorite() async {
         guard let details = movieDetails else { return }
         guard currentUser != nil else {
             router.present(.auth)

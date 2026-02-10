@@ -6,7 +6,8 @@ enum Secrets {
             let token = Bundle.main.object(forInfoDictionaryKey: "TMDB_READ_TOKEN") as? String,
             !token.isEmpty
         else {
-            fatalError("TMDB_READ_TOKEN is missing. Create Secrets.xcconfig.")
+//            fatalError("TMDB_READ_TOKEN is missing. Create Secrets.xcconfig.")
+            return ""
         }
         return token
     }

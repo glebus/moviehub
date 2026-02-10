@@ -15,6 +15,7 @@
 		925AFD252F266279001FD1FE /* Profile in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD242F266279001FD1FE /* Profile */; };
 		925AFD272F266279001FD1FE /* Router in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD262F266279001FD1FE /* Router */; };
 		9274121A2F24FA4F0027B3DE /* Domain in Frameworks */ = {isa = PBXBuildFile; productRef = 927412192F24FA4F0027B3DE /* Domain */; };
+		FAEA7BB52F3B8723007B640D /* Utilities in Frameworks */ = {isa = PBXBuildFile; productRef = FAEA7BB42F3B8723007B640D /* Utilities */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +70,7 @@
 				925AFD212F266279001FD1FE /* MovieDetails in Frameworks */,
 				925AFD1F2F266279001FD1FE /* FavoriteList in Frameworks */,
 				925AFD1B2F266279001FD1FE /* Data in Frameworks */,
+				FAEA7BB52F3B8723007B640D /* Utilities in Frameworks */,
 				925AFD232F266279001FD1FE /* MovieList in Frameworks */,
 				9274121A2F24FA4F0027B3DE /* Domain in Frameworks */,
 				925AFD1D2F266279001FD1FE /* Auth in Frameworks */,
@@ -128,6 +130,7 @@
 				925AFD222F266279001FD1FE /* MovieList */,
 				925AFD242F266279001FD1FE /* Profile */,
 				925AFD262F266279001FD1FE /* Router */,
+				FAEA7BB42F3B8723007B640D /* Utilities */,
 			);
 			productName = moviehub;
 			productReference = 925AFD2A2F2677E6001FD1FE /* moviehub.app */;
@@ -459,6 +462,10 @@
 		927412192F24FA4F0027B3DE /* Domain */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Domain;
+		};
+		FAEA7BB42F3B8723007B640D /* Utilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Utilities;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

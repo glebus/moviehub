@@ -47,7 +47,7 @@ public final class MovieListViewModel {
         router.push(.movieDetails(movieId))
     }
 
-    private func search() async {
+    func search() async {
         state = .loading
         do {
             let results = try await movieRepository.search(query: searchText)

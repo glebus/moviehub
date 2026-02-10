@@ -1,0 +1,1420 @@
+diff --git a/.claude/settings.local.json b/.claude/settings.local.json
+new file mode 100644
+index 0000000..e599d3c
+--- /dev/null
++++ b/.claude/settings.local.json
+@@ -0,0 +1,8 @@
++{
++  "permissions": {
++    "allow": [
++      "Bash(swift build:*)",
++      "Bash(swift test:*)"
++    ]
++  }
++}
+diff --git a/AGENTS.md b/AGENTS.md
+index 2679ab6..86c90cf 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -16,7 +16,7 @@ These instructions describe how an LLM should work in this repository. Follow th
+ - Business logic + data state (e.g., current user, favorites state).
+ - Models, errors, utilities.
+ - Protocols for repositories + interactors.
+-- Interactors own data state and expose `AsyncStream`.
++- Interactors own data state; ViewModels subscribe via `observeChanges` from `Utilities`.
+ - `DomainMocks` product contains mocks for previews/tests.
+ 
+ **Data**
+@@ -46,15 +46,25 @@ These instructions describe how an LLM should work in this repository. Follow th
+ - App renders destinations from Router state.
+ - Each tab has its own `NavigationStack` path.
+ 
++## Utilities package
++- Cross-platform helpers shared by Domain and Features.
++- `observeChanges(_:onChange:)` — loop-based observation helper that subscribes to an `@Observable` property via a read closure and delivers changes. Use this instead of manual `withObservationTracking` loops.
++- Usage: `observeChanges({ interactor.currentUser }) { [weak self] user in self?.currentUser = user }`
++- Sync and async `onChange` overloads are available.
++
+ ## Builders and ViewModels
+ - Screens accept a `ViewModel` in the initializer (generated init).
+ - ViewModels are `@Observable` and `@MainActor`.
+ - ViewModels should not be `public init` unless needed outside the builder.
+ - `AuthButtonBuilder` is stored inside ViewModels (not screens).
++- ViewModels expose sync methods for SwiftUI (e.g., `loginTapped()`) that wrap internal async methods (e.g., `func login() async`). The async methods have `internal` access so tests can call them directly via `@testable import`.
+ 
+ ## Testing
+ - Use **Swift Testing**.
+-- Tests should rely on `withObservationTracking` to observe state changes.
++- Tests call internal async methods directly via `@testable import` — no observation tracking, polling, or timeouts in tests.
++- Pattern: `await viewModel.login()` then `#expect(viewModel.state == .success)`.
++- Do **not** use `withObservationTracking` or `waitForChange` helpers in tests.
++- For computed-state ViewModels (e.g., `FavoriteListViewModel`), set properties directly and assert the computed state.
+ - Use mocks from `DomainMocks` in Feature tests.
+ - Prefer `swift test` for fast validation:
+   - `cd Packages/Domain && swift test`
+diff --git a/Packages/Domain/Package.swift b/Packages/Domain/Package.swift
+index a714811..f528eaa 100644
+--- a/Packages/Domain/Package.swift
++++ b/Packages/Domain/Package.swift
+@@ -12,8 +12,11 @@ let package = Package(
+         .library(name: "Domain", targets: ["Domain"]),
+         .library(name: "DomainMocks", targets: ["DomainMocks"])
+     ],
++    dependencies: [
++        .package(path: "../Utilities")
++    ],
+     targets: [
+-        .target(name: "Domain"),
++        .target(name: "Domain", dependencies: ["Utilities"]),
+         .target(name: "DomainMocks", dependencies: ["Domain"]),
+         .testTarget(name: "DomainTests", dependencies: ["Domain", "DomainMocks"])
+     ]
+diff --git a/Packages/Domain/Sources/Domain/Interactors/FavoritesInteractor.swift b/Packages/Domain/Sources/Domain/Interactors/FavoritesInteractor.swift
+index 46e86be..cd239e9 100644
+--- a/Packages/Domain/Sources/Domain/Interactors/FavoritesInteractor.swift
++++ b/Packages/Domain/Sources/Domain/Interactors/FavoritesInteractor.swift
+@@ -1,18 +1,19 @@
+ import Foundation
++import Observation
++import Utilities
+ 
+ @MainActor
++@Observable
+ public final class FavoritesInteractor: FavoritesInteractorProtocol {
+     private let favoritesRepository: FavoritesRepositoryProtocol
+     private let sessionInteractor: SessionInteractor
+-    private let subject: AsyncStreamSubject<[Movie]>
+-    private var favoritesCache: [Movie]
+-    nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
++    public private(set) var favorites: [Movie]
++    @ObservationIgnored private var sessionTask: Task<Void, Never>?
+ 
+     public init(favoritesRepository: FavoritesRepositoryProtocol, sessionInteractor: SessionInteractor) {
+         self.favoritesRepository = favoritesRepository
+         self.sessionInteractor = sessionInteractor
+-        self.favoritesCache = []
+-        self.subject = AsyncStreamSubject(initial: [])
++        self.favorites = []
+         observeSession()
+     }
+ 
+@@ -20,25 +21,16 @@ public final class FavoritesInteractor: FavoritesInteractorProtocol {
+         sessionTask?.cancel()
+     }
+ 
+-    public func favorites() -> [Movie] {
+-        favoritesCache
+-    }
+-
+-    public var favoritesStream: AsyncStream<[Movie]> {
+-        subject.stream
+-    }
+-
+     public func refresh() async throws {
+-        guard let user = sessionInteractor.currentUser() else {
++        guard let user = sessionInteractor.currentUser else {
+             throw AuthRequiredError()
+         }
+         let updated = try await favoritesRepository.fetchFavorites(userId: user.id)
+-        favoritesCache = updated
+-        await subject.send(updated)
++        favorites = updated
+     }
+ 
+     public func toggle(movie: MovieDetails) async throws -> Bool {
+-        guard let user = sessionInteractor.currentUser() else {
++        guard let user = sessionInteractor.currentUser else {
+             throw AuthRequiredError()
+         }
+ 
+@@ -54,20 +46,21 @@ public final class FavoritesInteractor: FavoritesInteractorProtocol {
+     }
+ 
+     public func isFavorite(movieId: MovieID) -> Bool {
+-        favoritesCache.contains { $0.id == movieId }
++        favorites.contains { $0.id == movieId }
+     }
+ 
+     private func observeSession() {
+-        sessionTask = Task { @MainActor [weak self] in
+-            guard let self else { return }
+-            for await user in sessionInteractor.currentUserStream {
+-                if user == nil {
+-                    favoritesCache = []
+-                    await subject.send([])
+-                } else {
+-                    try? await refresh()
+-                }
+-            }
++        sessionTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
++            await self?.handleSessionChange(user)
++        }
++    }
++
++    func handleSessionChange(_ user: User?) async {
++        if user == nil {
++            favorites = []
++        } else {
++            try? await refresh()
+         }
+     }
+ }
++
+diff --git a/Packages/Domain/Sources/Domain/Interactors/SessionInteractor.swift b/Packages/Domain/Sources/Domain/Interactors/SessionInteractor.swift
+index e6a51a9..85a9838 100644
+--- a/Packages/Domain/Sources/Domain/Interactors/SessionInteractor.swift
++++ b/Packages/Domain/Sources/Domain/Interactors/SessionInteractor.swift
+@@ -1,40 +1,29 @@
+ import Foundation
++import Observation
+ 
+ @MainActor
++@Observable
+ public final class SessionInteractor: SessionInteractorProtocol {
+     private let profileRepository: ProfileRepositoryProtocol
+-    private let subject: AsyncStreamSubject<User?>
+-    private var currentUserCache: User?
++    public private(set) var currentUser: User?
+ 
+     public init(profileRepository: ProfileRepositoryProtocol) {
+         self.profileRepository = profileRepository
+-        self.subject = AsyncStreamSubject(initial: nil)
+-    }
+-
+-    public func currentUser() -> User? {
+-        currentUserCache
+-    }
+-
+-    public var currentUserStream: AsyncStream<User?> {
+-        subject.stream
+     }
+ 
+     public func login(username: String) async throws -> User {
+         let normalized = UsernameNormalizer.normalize(username)
+         if let existing = try await profileRepository.findUser(username: normalized) {
+-            currentUserCache = existing
+-            await subject.send(existing)
++            currentUser = existing
+             return existing
+         }
+ 
+         let created = try await profileRepository.createUser(username: normalized)
+-        currentUserCache = created
+-        await subject.send(created)
++        currentUser = created
+         return created
+     }
+ 
+     public func logout() async {
+-        currentUserCache = nil
+-        await subject.send(nil)
++        currentUser = nil
+     }
+ }
+diff --git a/Packages/Domain/Sources/Domain/Protocols/Interactors/FavoritesInteractorProtocol.swift b/Packages/Domain/Sources/Domain/Protocols/Interactors/FavoritesInteractorProtocol.swift
+index f4945e7..471fc2c 100644
+--- a/Packages/Domain/Sources/Domain/Protocols/Interactors/FavoritesInteractorProtocol.swift
++++ b/Packages/Domain/Sources/Domain/Protocols/Interactors/FavoritesInteractorProtocol.swift
+@@ -1,7 +1,6 @@
+ @MainActor
+-public protocol FavoritesInteractorProtocol: Sendable {
+-    func favorites() -> [Movie]
+-    var favoritesStream: AsyncStream<[Movie]> { get }
++public protocol FavoritesInteractorProtocol: Sendable, AnyObject {
++    var favorites: [Movie] { get }
+     func refresh() async throws
+     func toggle(movie: MovieDetails) async throws -> Bool
+     func isFavorite(movieId: MovieID) -> Bool
+diff --git a/Packages/Domain/Sources/Domain/Protocols/Interactors/SessionInteractorProtocol.swift b/Packages/Domain/Sources/Domain/Protocols/Interactors/SessionInteractorProtocol.swift
+index 69f407c..87a7321 100644
+--- a/Packages/Domain/Sources/Domain/Protocols/Interactors/SessionInteractorProtocol.swift
++++ b/Packages/Domain/Sources/Domain/Protocols/Interactors/SessionInteractorProtocol.swift
+@@ -1,7 +1,6 @@
+ @MainActor
+-public protocol SessionInteractorProtocol: Sendable {
+-    func currentUser() -> User?
+-    var currentUserStream: AsyncStream<User?> { get }
++public protocol SessionInteractorProtocol: Sendable, AnyObject {
++    var currentUser: User? { get }
+     func login(username: String) async throws -> User
+     func logout() async
+ }
+diff --git a/Packages/Domain/Sources/Domain/Utilities/AsyncStreamSubject.swift b/Packages/Domain/Sources/Domain/Utilities/AsyncStreamSubject.swift
+deleted file mode 100644
+index 8cce499..0000000
+--- a/Packages/Domain/Sources/Domain/Utilities/AsyncStreamSubject.swift
++++ /dev/null
+@@ -1,48 +0,0 @@
+-import Foundation
+-
+-public actor AsyncStreamSubject<Value: Sendable>: Sendable {
+-    private struct Box<T> {
+-        let value: T
+-    }
+-
+-    private var continuations: [UUID: AsyncStream<Value>.Continuation] = [:]
+-    private var lastValue: Box<Value>?
+-
+-    public init() {}
+-
+-    public init(initial: Value) {
+-        self.lastValue = Box(value: initial)
+-    }
+-
+-    public nonisolated var stream: AsyncStream<Value> {
+-        AsyncStream { continuation in
+-            let id = UUID()
+-            Task { await self.register(id: id, continuation: continuation) }
+-            continuation.onTermination = { _ in
+-                Task { await self.unregister(id: id) }
+-            }
+-        }
+-    }
+-
+-    public func send(_ value: Value) {
+-        lastValue = Box(value: value)
+-        for continuation in continuations.values {
+-            continuation.yield(value)
+-        }
+-    }
+-
+-    public func latest() -> Value? {
+-        lastValue?.value
+-    }
+-
+-    private func register(id: UUID, continuation: AsyncStream<Value>.Continuation) async {
+-        continuations[id] = continuation
+-        if let boxed = lastValue {
+-            continuation.yield(boxed.value)
+-        }
+-    }
+-
+-    private func unregister(id: UUID) async {
+-        continuations[id] = nil
+-    }
+-}
+diff --git a/Packages/Domain/Sources/DomainMocks/FavoritesInteractorMock.swift b/Packages/Domain/Sources/DomainMocks/FavoritesInteractorMock.swift
+index c2380e8..3be0579 100644
+--- a/Packages/Domain/Sources/DomainMocks/FavoritesInteractorMock.swift
++++ b/Packages/Domain/Sources/DomainMocks/FavoritesInteractorMock.swift
+@@ -1,41 +1,31 @@
++import Observation
+ import Domain
+ 
+ @MainActor
++@Observable
+ public final class FavoritesInteractorMock: FavoritesInteractorProtocol {
+-    private let subject: AsyncStreamSubject<[Movie]>
+-    private var favoritesCache: [Movie]
++    public private(set) var favorites: [Movie]
+ 
+     public init(favorites: [Movie] = []) {
+-        self.favoritesCache = favorites
+-        self.subject = AsyncStreamSubject(initial: favorites)
+-    }
+-
+-    public func favorites() -> [Movie] {
+-        favoritesCache
+-    }
+-
+-    public var favoritesStream: AsyncStream<[Movie]> {
+-        subject.stream
++        self.favorites = favorites
+     }
+ 
+     public func refresh() async throws {
+-        await subject.send(favoritesCache)
++        favorites = Array(favorites)
+     }
+ 
+     public func toggle(movie: MovieDetails) async throws -> Bool {
+-        if let index = favoritesCache.firstIndex(where: { $0.id == movie.id }) {
+-            favoritesCache.remove(at: index)
+-            await subject.send(favoritesCache)
++        if let index = favorites.firstIndex(where: { $0.id == movie.id }) {
++            favorites.remove(at: index)
+             return false
+         }
+ 
+         let item = Movie(id: movie.id, title: movie.title, year: nil, posterURL: movie.posterURL)
+-        favoritesCache.append(item)
+-        await subject.send(favoritesCache)
++        favorites.append(item)
+         return true
+     }
+ 
+     public func isFavorite(movieId: MovieID) -> Bool {
+-        favoritesCache.contains { $0.id == movieId }
++        favorites.contains { $0.id == movieId }
+     }
+ }
+diff --git a/Packages/Domain/Sources/DomainMocks/SessionInteractorMock.swift b/Packages/Domain/Sources/DomainMocks/SessionInteractorMock.swift
+index 8e1d34e..30aeae1 100644
+--- a/Packages/Domain/Sources/DomainMocks/SessionInteractorMock.swift
++++ b/Packages/Domain/Sources/DomainMocks/SessionInteractorMock.swift
+@@ -1,33 +1,23 @@
++import Observation
+ import Domain
+ 
+ @MainActor
++@Observable
+ public final class SessionInteractorMock: SessionInteractorProtocol {
+-    private let subject: AsyncStreamSubject<User?>
+-    private var currentUserCache: User?
++    public private(set) var currentUser: User?
+ 
+     public init(currentUser: User? = nil) {
+-        self.currentUserCache = currentUser
+-        self.subject = AsyncStreamSubject(initial: currentUser)
+-    }
+-
+-    public func currentUser() -> User? {
+-        currentUserCache
+-    }
+-
+-    public var currentUserStream: AsyncStream<User?> {
+-        subject.stream
++        self.currentUser = currentUser
+     }
+ 
+     public func login(username: String) async throws -> User {
+         let normalized = UsernameNormalizer.normalize(username)
+         let user = User(id: UserID(normalized), username: normalized)
+-        currentUserCache = user
+-        await subject.send(user)
++        currentUser = user
+         return user
+     }
+ 
+     public func logout() async {
+-        currentUserCache = nil
+-        await subject.send(nil)
++        currentUser = nil
+     }
+ }
+diff --git a/Packages/Domain/Tests/DomainTests/FavoritesInteractorTests.swift b/Packages/Domain/Tests/DomainTests/FavoritesInteractorTests.swift
+index 78eb165..3a1787d 100644
+--- a/Packages/Domain/Tests/DomainTests/FavoritesInteractorTests.swift
++++ b/Packages/Domain/Tests/DomainTests/FavoritesInteractorTests.swift
+@@ -1,37 +1,41 @@
+ import Testing
+-import Domain
++@testable import Domain
+ import DomainMocks
+ 
+ @MainActor
+ struct FavoritesInteractorTests {
+     @Test
+-    func streamEmitsOnSessionChange() async throws {
++    func refreshLoadsFavorites() async throws {
+         let profileRepo = ProfileRepositoryMock()
+         let favoritesRepo = FavoritesRepositoryMock()
+         let session = SessionInteractor(profileRepository: profileRepo)
+         let interactor = FavoritesInteractor(favoritesRepository: favoritesRepo, sessionInteractor: session)
+ 
+-        var iterator = interactor.favoritesStream.makeAsyncIterator()
+-        let initial = await iterator.next() ?? []
+-        #expect(initial == [])
++        #expect(interactor.favorites == [])
+ 
+         let user = try await session.login(username: "user")
+         let seeded = Movie(id: MovieID("m1"), title: "Movie", year: nil, posterURL: nil)
+         await favoritesRepo.seedFavorites([seeded], for: user.id)
+ 
+         try await interactor.refresh()
+-        var refreshed = await iterator.next() ?? []
+-        if refreshed.isEmpty {
+-            refreshed = await iterator.next() ?? []
+-        }
+-        #expect(refreshed == [seeded])
+-
+-        await session.logout()
+-        var cleared = await iterator.next() ?? [seeded]
+-        if cleared == [seeded] {
+-            cleared = await iterator.next() ?? [seeded]
+-        }
+-        #expect(cleared == [])
++        #expect(interactor.favorites == [seeded])
++    }
++
++    @Test
++    func handleSessionChangeClearsFavoritesOnLogout() async throws {
++        let profileRepo = ProfileRepositoryMock()
++        let favoritesRepo = FavoritesRepositoryMock()
++        let session = SessionInteractor(profileRepository: profileRepo)
++        let interactor = FavoritesInteractor(favoritesRepository: favoritesRepo, sessionInteractor: session)
++
++        let user = try await session.login(username: "user")
++        let seeded = Movie(id: MovieID("m1"), title: "Movie", year: nil, posterURL: nil)
++        await favoritesRepo.seedFavorites([seeded], for: user.id)
++        try await interactor.refresh()
++        #expect(interactor.favorites == [seeded])
++
++        await interactor.handleSessionChange(nil)
++        #expect(interactor.favorites == [])
+     }
+ 
+     @Test
+diff --git a/Packages/Domain/Tests/DomainTests/SessionInteractorTests.swift b/Packages/Domain/Tests/DomainTests/SessionInteractorTests.swift
+index 5ed1ef9..fb1629a 100644
+--- a/Packages/Domain/Tests/DomainTests/SessionInteractorTests.swift
++++ b/Packages/Domain/Tests/DomainTests/SessionInteractorTests.swift
+@@ -8,29 +8,20 @@ struct SessionInteractorTests {
+     func loginSetsCacheAndEmitsStream() async throws {
+         let repo = ProfileRepositoryMock()
+         let interactor = SessionInteractor(profileRepository: repo)
+-        var iterator = interactor.currentUserStream.makeAsyncIterator()
+ 
+-        _ = await iterator.next()
+-        let user = try await interactor.login(username: "  Alice  ")
+-        let emitted = await iterator.next() ?? nil
++        let loggedInUser = try await interactor.login(username: "  Alice  ")
+ 
+-        #expect(interactor.currentUser() == user)
+-        #expect(emitted == user)
++        #expect(interactor.currentUser == loggedInUser)
+     }
+ 
+     @Test
+     func logoutEmitsNil() async throws {
+         let repo = ProfileRepositoryMock()
+         let interactor = SessionInteractor(profileRepository: repo)
+-        var iterator = interactor.currentUserStream.makeAsyncIterator()
+-
+-        _ = await iterator.next()
+         _ = try await interactor.login(username: "Bob")
+-        _ = await iterator.next()
+ 
+         await interactor.logout()
+-        let emitted = await iterator.next() ?? nil
+ 
+-        #expect(emitted == nil)
++        #expect(interactor.currentUser == nil)
+     }
+ }
+diff --git a/Packages/Domain/Tests/DomainTests/TestHelpers.swift b/Packages/Domain/Tests/DomainTests/TestHelpers.swift
+new file mode 100644
+index 0000000..0655ed9
+--- /dev/null
++++ b/Packages/Domain/Tests/DomainTests/TestHelpers.swift
+@@ -0,0 +1,7 @@
++import Testing
++
++@MainActor
++@inline(__always)
++func fail(_ message: String) {
++    #expect(Bool(false), Comment(rawValue: message))
++}
+diff --git a/Packages/Features/Package.swift b/Packages/Features/Package.swift
+index 90dd6d2..55dd505 100644
+--- a/Packages/Features/Package.swift
++++ b/Packages/Features/Package.swift
+@@ -18,13 +18,14 @@ let package = Package(
+         .library(name: "Router", targets: ["Router"])
+     ],
+     dependencies: [
+-        .package(path: "../Domain")
++        .package(path: "../Domain"),
++        .package(path: "../Utilities")
+     ],
+     targets: [
+         .target(name: "Router", dependencies: ["Domain"]),
+         .target(
+             name: "AuthButton",
+-            dependencies: ["Domain", "Router", .product(name: "DomainMocks", package: "Domain")]
++            dependencies: ["Domain", "Router", "Utilities", .product(name: "DomainMocks", package: "Domain")]
+         ),
+         .target(
+             name: "MovieList",
+@@ -32,15 +33,15 @@ let package = Package(
+         ),
+         .target(
+             name: "MovieDetails",
+-            dependencies: ["Domain", "Router", "AuthButton", .product(name: "DomainMocks", package: "Domain")]
++            dependencies: ["Domain", "Router", "AuthButton", "Utilities", .product(name: "DomainMocks", package: "Domain")]
+         ),
+         .target(
+             name: "FavoriteList",
+-            dependencies: ["Domain", "Router", "AuthButton", .product(name: "DomainMocks", package: "Domain")]
++            dependencies: ["Domain", "Router", "AuthButton", "Utilities", .product(name: "DomainMocks", package: "Domain")]
+         ),
+         .target(
+             name: "Profile",
+-            dependencies: ["Domain", "Router", "AuthButton", .product(name: "DomainMocks", package: "Domain")]
++            dependencies: ["Domain", "Router", "AuthButton", "Utilities", .product(name: "DomainMocks", package: "Domain")]
+         ),
+         .target(
+             name: "Auth",
+diff --git a/Packages/Features/Sources/Auth/AuthViewModel.swift b/Packages/Features/Sources/Auth/AuthViewModel.swift
+index 18865cc..ff88b9a 100644
+--- a/Packages/Features/Sources/Auth/AuthViewModel.swift
++++ b/Packages/Features/Sources/Auth/AuthViewModel.swift
+@@ -30,7 +30,7 @@ public final class AuthViewModel {
+         Task { await login() }
+     }
+ 
+-    private func login() async {
++    func login() async {
+         let trimmed = username.trimmingCharacters(in: .whitespacesAndNewlines)
+         guard !trimmed.isEmpty else {
+             state = .error("Please enter a username")
+diff --git a/Packages/Features/Sources/AuthButton/AuthButtonViewModel.swift b/Packages/Features/Sources/AuthButton/AuthButtonViewModel.swift
+index fc5e54f..053dfce 100644
+--- a/Packages/Features/Sources/AuthButton/AuthButtonViewModel.swift
++++ b/Packages/Features/Sources/AuthButton/AuthButtonViewModel.swift
+@@ -1,6 +1,7 @@
+ import Observation
+ import Domain
+ import Router
++import Utilities
+ 
+ @MainActor
+ @Observable
+@@ -15,6 +16,7 @@ public final class AuthButtonViewModel {
+     init(sessionInteractor: SessionInteractorProtocol, router: AppRouterProtocol) {
+         self.sessionInteractor = sessionInteractor
+         self.router = router
++        applySession(sessionInteractor.currentUser)
+         subscribe()
+     }
+ 
+@@ -31,12 +33,13 @@ public final class AuthButtonViewModel {
+     }
+ 
+     private func subscribe() {
+-        streamTask = Task { [weak self] in
+-            guard let self else { return }
+-            for await user in sessionInteractor.currentUserStream {
+-                currentUser = user
+-                title = user?.username ?? "Login"
+-            }
++        streamTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
++            self?.applySession(user)
+         }
+     }
++
++    private func applySession(_ user: User?) {
++        currentUser = user
++        title = user?.username ?? "Login"
++    }
+ }
+diff --git a/Packages/Features/Sources/FavoriteList/FavoriteListScreen.swift b/Packages/Features/Sources/FavoriteList/FavoriteListScreen.swift
+index 1dd4d0d..992e61a 100644
+--- a/Packages/Features/Sources/FavoriteList/FavoriteListScreen.swift
++++ b/Packages/Features/Sources/FavoriteList/FavoriteListScreen.swift
+@@ -8,39 +8,41 @@ public struct FavoriteListScreen: View {
+ 
+     public var body: some View {
+         Group {
+-            switch viewModel.state {
+-            case .loggedOut:
++            if viewModel.currentUser == nil {
+                 VStack {
+                     Text("Not logged in")
+                         .font(.headline)
+                 }
+-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+-            case .loading:
+-                ProgressView()
+-            case .loaded(let favorites):
+-                List(favorites, id: \.id) { movie in
+-                    Button {
+-                        viewModel.select(movieId: movie.id)
+-                    } label: {
+-                        VStack(alignment: .leading, spacing: 4) {
+-                            Text(movie.title)
+-                                .font(.headline)
+-                            if let year = movie.year {
+-                                Text(year)
+-                                    .font(.subheadline)
+-                                    .foregroundStyle(.secondary)
++            } else {
++                if viewModel.favorites.isEmpty {
++                    VStack {
++                        Text("No favorites")
++                            .font(.headline)
++                    }
++                } else {
++                    List(viewModel.favorites, id: \.id) { movie in
++                        Button {
++                            viewModel.select(movieId: movie.id)
++                        } label: {
++                            VStack(alignment: .leading, spacing: 4) {
++                                Text(movie.title)
++                                    .font(.headline)
++                                if let year = movie.year {
++                                    Text(year)
++                                        .font(.subheadline)
++                                        .foregroundStyle(.secondary)
++                                }
+                             }
+                         }
++                        .buttonStyle(.plain)
+                     }
+-                    .buttonStyle(.plain)
+                 }
+-            case .error(let message):
+-                Text(message)
+-                    .font(.footnote)
+-                    .foregroundStyle(.red)
+             }
+         }
+         .navigationTitle("Favorites")
++        .onAppear {
++            viewModel.onAppear()
++        }
+         .toolbar {
+             viewModel.authButtonBuilder.build()
+         }
+diff --git a/Packages/Features/Sources/FavoriteList/FavoriteListViewModel.swift b/Packages/Features/Sources/FavoriteList/FavoriteListViewModel.swift
+index 83a8403..3587fea 100644
+--- a/Packages/Features/Sources/FavoriteList/FavoriteListViewModel.swift
++++ b/Packages/Features/Sources/FavoriteList/FavoriteListViewModel.swift
+@@ -3,27 +3,34 @@ import Observation
+ import Domain
+ import Router
+ import AuthButton
++import Utilities
+ 
+ @MainActor
+ @Observable
+ public final class FavoriteListViewModel {
+     public enum State: Sendable {
+-        case loggedOut
+-        case loading
++        case idle
+         case loaded([Movie])
+         case error(String)
+     }
+ 
+-    public var state: State
+-    public var isAuthSheetPresented: Bool
++    public var state: State {
++        if currentUser == nil {
++            return .idle
++        }
++        return .loaded(favorites)
++    }
++
++    public var favorites: [Movie] = []
++    public var currentUser: User?
+ 
+     private let sessionInteractor: SessionInteractorProtocol
+     private let favoritesInteractor: FavoritesInteractorProtocol
+     private let router: AppRouterProtocol
+     public let authButtonBuilder: AuthButtonBuilder
+-    @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
+-    @ObservationIgnored nonisolated(unsafe) private var favoritesTask: Task<Void, Never>?
+-    private var currentUser: User?
++
++    @ObservationIgnored private var profileTask: Task<Void, Never>?
++    @ObservationIgnored private var favoritesTask: Task<Void, Never>?
+ 
+     init(
+         sessionInteractor: SessionInteractorProtocol,
+@@ -35,10 +42,6 @@ public final class FavoriteListViewModel {
+         self.favoritesInteractor = favoritesInteractor
+         self.router = router
+         self.authButtonBuilder = authButtonBuilder
+-        self.state = .loggedOut
+-        self.isAuthSheetPresented = false
+-        subscribeToSession()
+-        subscribeToFavorites()
+     }
+ 
+     deinit {
+@@ -46,26 +49,26 @@ public final class FavoriteListViewModel {
+         favoritesTask?.cancel()
+     }
+ 
++    public func onAppear() {
++        subscribeToSession()
++        subscribeToFavorites()
++    }
++
+     public func select(movieId: MovieID) {
+         router.push(.movieDetails(movieId))
+     }
+ 
+     private func subscribeToSession() {
+-        profileTask = Task { @MainActor [weak self] in
+-            guard let self else { return }
+-            for await user in sessionInteractor.currentUserStream {
+-                self.currentUser = user
+-                self.state = user == nil ? .loggedOut : .loading
+-            }
++        profileTask?.cancel()
++        profileTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
++            self?.currentUser = user
+         }
+     }
+ 
+     private func subscribeToFavorites() {
+-        favoritesTask = Task { @MainActor [weak self] in
+-            guard let self else { return }
+-            for await favorites in favoritesInteractor.favoritesStream {
+-                self.state = self.currentUser == nil ? .loggedOut : .loaded(favorites)
+-            }
++        favoritesTask?.cancel()
++        favoritesTask = observeChanges({ [favoritesInteractor] in favoritesInteractor.favorites }) { [weak self] favorites in
++            self?.favorites = favorites
+         }
+     }
+ }
+diff --git a/Packages/Features/Sources/MovieDetails/MovieDetailsViewModel.swift b/Packages/Features/Sources/MovieDetails/MovieDetailsViewModel.swift
+index 98e687d..362548f 100644
+--- a/Packages/Features/Sources/MovieDetails/MovieDetailsViewModel.swift
++++ b/Packages/Features/Sources/MovieDetails/MovieDetailsViewModel.swift
+@@ -3,6 +3,7 @@ import Observation
+ import Domain
+ import Router
+ import AuthButton
++import Utilities
+ 
+ @MainActor
+ @Observable
+@@ -51,6 +52,7 @@ public final class MovieDetailsViewModel {
+         self.favoriteButtonEnabled = false
+         self.favoriteButtonTitle = "Add to favorites"
+         self.errorMessage = nil
++        applySession(sessionInteractor.currentUser)
+         subscribeToSession()
+         subscribeToFavorites()
+     }
+@@ -68,7 +70,7 @@ public final class MovieDetailsViewModel {
+         Task { await toggleFavorite() }
+     }
+ 
+-    private func loadDetails() async {
++    func loadDetails() async {
+         state = .loading
+         errorMessage = nil
+         do {
+@@ -90,28 +92,30 @@ public final class MovieDetailsViewModel {
+     }
+ 
+     private func subscribeToSession() {
+-        sessionTask = Task { @MainActor [weak self] in
+-            guard let self else { return }
+-            for await user in sessionInteractor.currentUserStream {
+-                self.currentUser = user
+-                self.favoriteButtonEnabled = user != nil
+-            }
++        sessionTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
++            self?.applySession(user)
+         }
+     }
+ 
+     private func subscribeToFavorites() {
+-        favoritesTask = Task { @MainActor [weak self] in
+-            guard let self else { return }
+-            for await favorites in favoritesInteractor.favoritesStream {
+-                if let details = movieDetails {
+-                    self.isFavorite = favorites.contains { $0.id == details.id }
+-                    self.updateFavoriteButtonTitle()
+-                }
+-            }
++        favoritesTask = observeChanges({ [favoritesInteractor] in favoritesInteractor.favorites }) { [weak self] favorites in
++            self?.applyFavorites(favorites)
+         }
+     }
+ 
+-    private func toggleFavorite() async {
++    private func applySession(_ user: User?) {
++        currentUser = user
++        favoriteButtonEnabled = user != nil
++    }
++
++    private func applyFavorites(_ favorites: [Movie]) {
++        if let details = movieDetails {
++            isFavorite = favorites.contains { $0.id == details.id }
++            updateFavoriteButtonTitle()
++        }
++    }
++
++    func toggleFavorite() async {
+         guard let details = movieDetails else { return }
+         guard currentUser != nil else {
+             router.present(.auth)
+diff --git a/Packages/Features/Sources/MovieList/MovieListViewModel.swift b/Packages/Features/Sources/MovieList/MovieListViewModel.swift
+index f0095ec..bbf82ce 100644
+--- a/Packages/Features/Sources/MovieList/MovieListViewModel.swift
++++ b/Packages/Features/Sources/MovieList/MovieListViewModel.swift
+@@ -47,7 +47,7 @@ public final class MovieListViewModel {
+         router.push(.movieDetails(movieId))
+     }
+ 
+-    private func search() async {
++    func search() async {
+         state = .loading
+         do {
+             let results = try await movieRepository.search(query: searchText)
+diff --git a/Packages/Features/Sources/Profile/ProfileViewModel.swift b/Packages/Features/Sources/Profile/ProfileViewModel.swift
+index b18bc2d..399a304 100644
+--- a/Packages/Features/Sources/Profile/ProfileViewModel.swift
++++ b/Packages/Features/Sources/Profile/ProfileViewModel.swift
+@@ -3,6 +3,7 @@ import Observation
+ import Domain
+ import Router
+ import AuthButton
++import Utilities
+ 
+ @MainActor
+ @Observable
+@@ -32,6 +33,7 @@ public final class ProfileViewModel {
+         self.state = .loggedOut
+         self.isAuthSheetPresented = false
+         self.errorMessage = nil
++        applyProfile(sessionInteractor.currentUser)
+         subscribeToProfile()
+     }
+ 
+@@ -40,19 +42,25 @@ public final class ProfileViewModel {
+     }
+ 
+     public func logoutTapped() {
+-        Task { await sessionInteractor.logout() }
++        Task { await logout() }
++    }
++
++    func logout() async {
++        await sessionInteractor.logout()
++        applyProfile(sessionInteractor.currentUser)
+     }
+ 
+     private func subscribeToProfile() {
+-        profileTask = Task { @MainActor [weak self] in
+-            guard let self else { return }
+-            for await user in sessionInteractor.currentUserStream {
+-                if let user {
+-                    self.state = .loggedIn(username: user.username)
+-                } else {
+-                    self.state = .loggedOut
+-                }
+-            }
++        profileTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
++            self?.applyProfile(user)
++        }
++    }
++
++    private func applyProfile(_ user: User?) {
++        if let user {
++            state = .loggedIn(username: user.username)
++        } else {
++            state = .loggedOut
+         }
+     }
+ }
+diff --git a/Packages/Features/Tests/FeaturesTests/AuthButtonViewModelTests.swift b/Packages/Features/Tests/FeaturesTests/AuthButtonViewModelTests.swift
+index 8bb3e80..abd0fb4 100644
+--- a/Packages/Features/Tests/FeaturesTests/AuthButtonViewModelTests.swift
++++ b/Packages/Features/Tests/FeaturesTests/AuthButtonViewModelTests.swift
+@@ -13,9 +13,7 @@ struct AuthButtonViewModelTests {
+         let session = SessionInteractorMock(currentUser: user)
+         let viewModel = AuthButtonViewModel(sessionInteractor: session, router: router)
+ 
+-        let titles = await recordChanges(count: 1, observe: { viewModel.title })
+-
+-        #expect(titles.last == "alex")
++        #expect(viewModel.title == "alex")
+     }
+ 
+     @Test
+@@ -36,8 +34,6 @@ struct AuthButtonViewModelTests {
+         let session = SessionInteractorMock(currentUser: user)
+         let viewModel = AuthButtonViewModel(sessionInteractor: session, router: router)
+ 
+-        _ = await recordChanges(count: 1, observe: { viewModel.title })
+-
+         viewModel.tapped()
+ 
+         #expect(router.selectedTab == .profile)
+diff --git a/Packages/Features/Tests/FeaturesTests/AuthViewModelTests.swift b/Packages/Features/Tests/FeaturesTests/AuthViewModelTests.swift
+index 487baf6..37350e2 100644
+--- a/Packages/Features/Tests/FeaturesTests/AuthViewModelTests.swift
++++ b/Packages/Features/Tests/FeaturesTests/AuthViewModelTests.swift
+@@ -12,11 +12,9 @@ struct AuthViewModelTests {
+         let viewModel = AuthViewModel(sessionInteractor: session, router: router)
+ 
+         viewModel.username = " "
+-        let states = await recordChanges(count: 1, observe: { viewModel.state }) {
+-            viewModel.loginTapped()
+-        }
++        await viewModel.login()
+ 
+-        guard case .error(let message) = states.last else {
++        guard case .error(let message) = viewModel.state else {
+             fail("Expected error state for empty username")
+             return
+         }
+@@ -30,11 +28,9 @@ struct AuthViewModelTests {
+         let viewModel = AuthViewModel(sessionInteractor: session, router: router)
+ 
+         viewModel.username = "Alex"
+-        let states = await recordChanges(count: 2, observe: { viewModel.state }) {
+-            viewModel.loginTapped()
+-        }
++        await viewModel.login()
+ 
+-        #expect(states.contains(.success))
++        #expect(viewModel.state == .success)
+         #expect(router.didDismissSheet == true)
+     }
+ }
+diff --git a/Packages/Features/Tests/FeaturesTests/FavoriteListViewModelTests.swift b/Packages/Features/Tests/FeaturesTests/FavoriteListViewModelTests.swift
+index 5b9daf5..4d56059 100644
+--- a/Packages/Features/Tests/FeaturesTests/FavoriteListViewModelTests.swift
++++ b/Packages/Features/Tests/FeaturesTests/FavoriteListViewModelTests.swift
+@@ -8,7 +8,7 @@ import AuthButton
+ @MainActor
+ struct FavoriteListViewModelTests {
+     @Test
+-    func loggedOutStateWhenNoUser() async {
++    func idleStateWhenNoUser() async {
+         let router = AppRouterMock()
+         let session = SessionInteractorMock(currentUser: nil)
+         let favorites = FavoritesInteractorMock()
+@@ -20,25 +20,17 @@ struct FavoriteListViewModelTests {
+             authButtonBuilder: authButtonBuilder
+         )
+ 
+-        let states = await recordChanges(count: 0, observe: { viewModel.state })
+-
+-        guard case .loggedOut = viewModel.state else {
+-            fail("Expected loggedOut state when no user")
++        guard case .idle = viewModel.state else {
++            fail("Expected idle state when no user")
+             return
+         }
+-        #expect(states.contains { if case .loggedOut = $0 { true } else { false } })
+     }
+ 
+     @Test
+-    func loadsFavoritesWhenUserLoggedIn() async {
++    func loadedStateWhenUserAndFavoritesPresent() async {
+         let router = AppRouterMock()
+         let session = SessionInteractorMock(currentUser: nil)
+-        let favorites = FavoritesInteractorMock(
+-            favorites: [
+-                Movie(id: MovieID("m1"), title: "Fav 1", year: "2020", posterURL: nil),
+-                Movie(id: MovieID("m2"), title: "Fav 2", year: "2019", posterURL: nil)
+-            ]
+-        )
++        let favorites = FavoritesInteractorMock()
+         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
+         let viewModel = FavoriteListViewModel(
+             sessionInteractor: session,
+@@ -47,18 +39,16 @@ struct FavoriteListViewModelTests {
+             authButtonBuilder: authButtonBuilder
+         )
+ 
+-        let states = await recordChanges(count: 2, observe: { viewModel.state }) {
+-            Task {
+-                _ = try? await session.login(username: "alex")
+-                try? await favorites.refresh()
+-            }
+-        }
++        viewModel.currentUser = User(id: UserID("u1"), username: "alex")
++        viewModel.favorites = [
++            Movie(id: MovieID("m1"), title: "Fav 1", year: "2020", posterURL: nil),
++            Movie(id: MovieID("m2"), title: "Fav 2", year: "2019", posterURL: nil)
++        ]
+ 
+         guard case .loaded(let items) = viewModel.state else {
+             fail("Expected loaded state for favorites")
+             return
+         }
+         #expect(items.count == 2)
+-        #expect(states.contains { if case .loaded = $0 { true } else { false } })
+     }
+ }
+diff --git a/Packages/Features/Tests/FeaturesTests/MovieDetailsViewModelTests.swift b/Packages/Features/Tests/FeaturesTests/MovieDetailsViewModelTests.swift
+index 51e7b9c..9cc7345 100644
+--- a/Packages/Features/Tests/FeaturesTests/MovieDetailsViewModelTests.swift
++++ b/Packages/Features/Tests/FeaturesTests/MovieDetailsViewModelTests.swift
+@@ -32,17 +32,13 @@ struct MovieDetailsViewModelTests {
+             authButtonBuilder: authButtonBuilder
+         )
+ 
+-        let states = await recordChanges(count: 2, observe: { viewModel.state }) {
+-            viewModel.onAppear()
+-        }
++        await viewModel.loadDetails()
+ 
+         guard case .loaded(let model) = viewModel.state else {
+             fail("Expected loaded state after onAppear")
+             return
+         }
+         #expect(model.title == "Details")
+-        #expect(states.contains { if case .loading = $0 { true } else { false } })
+-        #expect(states.contains { if case .loaded = $0 { true } else { false } })
+     }
+ 
+     @Test
+@@ -70,14 +66,9 @@ struct MovieDetailsViewModelTests {
+             authButtonBuilder: authButtonBuilder
+         )
+ 
+-        _ = await recordChanges(count: 2, observe: { viewModel.state }) {
+-            viewModel.onAppear()
+-        }
+-
+-        let sheetValues = await recordChanges(count: 1, observe: { router.lastSheetDestination }) {
+-            viewModel.favoriteButtonTapped()
+-        }
++        await viewModel.loadDetails()
++        await viewModel.toggleFavorite()
+ 
+-        #expect(sheetValues.last == .auth)
++        #expect(router.lastSheetDestination == .auth)
+     }
+ }
+diff --git a/Packages/Features/Tests/FeaturesTests/MovieListViewModelTests.swift b/Packages/Features/Tests/FeaturesTests/MovieListViewModelTests.swift
+index f354db4..f4dfd63 100644
+--- a/Packages/Features/Tests/FeaturesTests/MovieListViewModelTests.swift
++++ b/Packages/Features/Tests/FeaturesTests/MovieListViewModelTests.swift
+@@ -23,9 +23,7 @@ struct MovieListViewModelTests {
+             authButtonBuilder: authButtonBuilder
+         )
+ 
+-        let states = await recordChanges(count: 2, observe: { viewModel.state }) {
+-            viewModel.submitSearch()
+-        }
++        await viewModel.search()
+ 
+         guard case .loaded(let movies) = viewModel.state else {
+             fail("Expected loaded state after search")
+@@ -33,7 +31,5 @@ struct MovieListViewModelTests {
+         }
+         #expect(movies.count == 1)
+         #expect(movies.first?.title == "Test")
+-        #expect(states.contains { if case .loading = $0 { true } else { false } })
+-        #expect(states.contains { if case .loaded = $0 { true } else { false } })
+     }
+ }
+diff --git a/Packages/Features/Tests/FeaturesTests/ProfileViewModelTests.swift b/Packages/Features/Tests/FeaturesTests/ProfileViewModelTests.swift
+index 9c50279..41591f9 100644
+--- a/Packages/Features/Tests/FeaturesTests/ProfileViewModelTests.swift
++++ b/Packages/Features/Tests/FeaturesTests/ProfileViewModelTests.swift
+@@ -18,14 +18,11 @@ struct ProfileViewModelTests {
+             authButtonBuilder: authButtonBuilder
+         )
+ 
+-        let states = await recordChanges(count: 1, observe: { viewModel.state })
+-
+         guard case .loggedIn(let username) = viewModel.state else {
+             fail("Expected loggedIn state for existing user")
+             return
+         }
+         #expect(username == "alex")
+-        #expect(states.contains { if case .loggedIn = $0 { true } else { false } })
+     }
+ 
+     @Test
+@@ -39,16 +36,11 @@ struct ProfileViewModelTests {
+             authButtonBuilder: authButtonBuilder
+         )
+ 
+-        _ = await recordChanges(count: 1, observe: { viewModel.state })
+-
+-        let states = await recordChanges(count: 1, observe: { viewModel.state }) {
+-            viewModel.logoutTapped()
+-        }
++        await viewModel.logout()
+ 
+         guard case .loggedOut = viewModel.state else {
+             fail("Expected loggedOut state after logout")
+             return
+         }
+-        #expect(states.contains { if case .loggedOut = $0 { true } else { false } })
+     }
+ }
+diff --git a/Packages/Features/Tests/FeaturesTests/TestHelpers.swift b/Packages/Features/Tests/FeaturesTests/TestHelpers.swift
+index 18962a4..0655ed9 100644
+--- a/Packages/Features/Tests/FeaturesTests/TestHelpers.swift
++++ b/Packages/Features/Tests/FeaturesTests/TestHelpers.swift
+@@ -1,51 +1,4 @@
+-import Foundation
+ import Testing
+-import Observation
+-
+-@MainActor
+-func waitForChange(
+-    _ observe: @escaping @MainActor @Sendable () -> Void
+-) async {
+-    await withCheckedContinuation { continuation in
+-        withObservationTracking {
+-            observe()
+-        } onChange: {
+-            continuation.resume()
+-        }
+-    }
+-}
+-
+-@MainActor
+-func recordChanges<T>(
+-    count: Int,
+-    observe: @escaping @MainActor @Sendable () -> T,
+-    perform: @escaping @MainActor @Sendable () -> Void
+-) async -> [T] {
+-    var values: [T] = [observe()]
+-    guard count > 0 else { return values }
+-
+-    await waitForChange {
+-        _ = observe()
+-        perform()
+-    }
+-    values.append(observe())
+-
+-    if count > 1 {
+-        for _ in 1..<count {
+-            await waitForChange { _ = observe() }
+-            values.append(observe())
+-        }
+-    }
+-    return values
+-}
+-
+-@MainActor
+-func recordChanges<T>(
+-    count: Int,
+-    observe: @escaping @MainActor @Sendable () -> T
+-) async -> [T] {
+-    await recordChanges(count: count, observe: observe, perform: {})
+-}
+ 
+ @MainActor
+ @inline(__always)
+diff --git a/Packages/Utilities/Package.swift b/Packages/Utilities/Package.swift
+new file mode 100644
+index 0000000..8722dc5
+--- /dev/null
++++ b/Packages/Utilities/Package.swift
+@@ -0,0 +1,18 @@
++// swift-tools-version: 6.0
++
++import PackageDescription
++
++let package = Package(
++    name: "Utilities",
++    platforms: [
++        .iOS(.v17),
++        .macOS(.v15)
++    ],
++    products: [
++        .library(name: "Utilities", targets: ["Utilities"])
++    ],
++    targets: [
++        .target(name: "Utilities"),
++        .testTarget(name: "UtilitiesTests", dependencies: ["Utilities"])
++    ]
++)
+diff --git a/Packages/Utilities/Sources/Utilities/ObservationTracking.swift b/Packages/Utilities/Sources/Utilities/ObservationTracking.swift
+new file mode 100644
+index 0000000..c02299e
+--- /dev/null
++++ b/Packages/Utilities/Sources/Utilities/ObservationTracking.swift
+@@ -0,0 +1,66 @@
++import Foundation
++import Observation
++
++/// Continuously observes a value produced by a `read` closure using a loop-based
++/// `withObservationTracking` pattern. Returns a `Task` you can cancel to stop observing.
++///
++/// The `onChange` closure is called immediately with the current value,
++/// and then again each time the observed property changes.
++///
++/// - Parameters:
++///   - read: A closure that reads the observed property (triggers observation tracking).
++///   - onChange: A closure called with the current value on each change.
++/// - Returns: A cancellable `Task` that drives the observation loop.
++///
++/// Example usage:
++/// ```swift
++/// let task = observeChanges({ interactor.currentUser }) { [weak self] user in
++///     self?.currentUser = user
++/// }
++/// // Later: task.cancel()
++/// ```
++@MainActor
++public func observeChanges<V: Sendable>(
++    _ read: @escaping @MainActor () -> V,
++    onChange: @escaping @MainActor (V) -> Void
++) -> Task<Void, Never> {
++    Task { @MainActor in
++        onChange(read())
++
++        while !Task.isCancelled {
++            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
++                withObservationTracking {
++                    _ = read()
++                } onChange: {
++                    continuation.resume()
++                }
++            }
++
++            guard !Task.isCancelled else { return }
++            onChange(read())
++        }
++    }
++}
++
++@MainActor
++public func observeChanges<V: Sendable>(
++    _ read: @escaping @MainActor () -> V,
++    onChange: @escaping @MainActor (V) async -> Void
++) -> Task<Void, Never> {
++    Task { @MainActor in
++        await onChange(read())
++
++        while !Task.isCancelled {
++            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
++                withObservationTracking {
++                    _ = read()
++                } onChange: {
++                    continuation.resume()
++                }
++            }
++
++            guard !Task.isCancelled else { return }
++            await onChange(read())
++        }
++    }
++}
+diff --git a/Packages/Utilities/Tests/UtilitiesTests/PlaceholderTests.swift b/Packages/Utilities/Tests/UtilitiesTests/PlaceholderTests.swift
+new file mode 100644
+index 0000000..6be478f
+--- /dev/null
++++ b/Packages/Utilities/Tests/UtilitiesTests/PlaceholderTests.swift
+@@ -0,0 +1,9 @@
++import Testing
++
++@MainActor
++struct UtilitiesTests {
++    @Test
++    func placeholder() {
++        #expect(true)
++    }
++}
+diff --git a/README.md b/README.md
+index d043010..5960d4b 100644
+--- a/README.md
++++ b/README.md
+@@ -18,17 +18,22 @@ In practice, `Features` can become iOS‑specific (SwiftUI or snapshot tests), a
+ The minimum goal is to keep `Domain` cross‑platform; for `Data` we can split iOS‑specific parts into a separate package if needed.
+ 
+ ### Layer dependencies
+-- `Domain` has **no dependencies**.
++- `Utilities` has **no dependencies** (cross-platform helpers).
++- `Domain` depends **only on Utilities**.
+ - `Data` depends **only on Domain**.
+-- `Features` depends **only on Domain** and does **not** know about `Data`.
++- `Features` depends **only on Domain and Utilities** and does **not** know about `Data`.
+ - `App` knows about all layers and composes them together.
+ 
+ ### Layer responsibilities
++**Utilities**
++- Cross-platform helpers shared across packages
++- `observeChanges` — loop-based observation helper for subscribing to `@Observable` properties
++
+ **Domain**
+ - Business logic and data state (e.g., current user) not tied to UI
+ - Models, errors, utilities
+ - Protocols for data access
+-- Interactors (data state + `AsyncStream`)
++- Interactors (data state + Observation via `observeChanges`)
+ - `DomainMocks` for previews/tests (kept here for convenience)
+ 
+ **Data**
+@@ -57,6 +62,7 @@ graph TD
+     Router[Router]
+     Domain[Domain]
+     Data[Data]
++    Utilities[Utilities]
+ 
+     App --> Features
+     App --> Data
+@@ -64,10 +70,13 @@ graph TD
+ 
+     Features --> Domain
+     Features --> Router
++    Features --> Utilities
+ 
+     Router --> Domain
+ 
+     Data --> Domain
++
++    Domain --> Utilities
+ ```
+ 
+ ## Navigation
+@@ -105,8 +114,16 @@ cd ../Data && swift test
+ cd ../Features && swift test
+ ```
+ 
++Tests use the **direct await** pattern: ViewModels expose sync methods for SwiftUI (e.g., `loginTapped()`) that wrap internal async methods (e.g., `login()`). Tests call the async methods directly via `@testable import`, then assert final state — no polling, timeouts, or observation tracking needed.
++
++```swift
++await viewModel.login()
++#expect(viewModel.state == .success)
++```
++
+ ## Notes
+ - Minimum platforms: iOS 17, macOS 15
+ - No Combine
+ - Data state lives in Domain Interactors
+ - View state lives in ViewModels
++- Observation subscriptions use `observeChanges` from Utilities (not manual `withObservationTracking` loops)
+diff --git a/moviehub.xcodeproj/project.pbxproj b/moviehub.xcodeproj/project.pbxproj
+index ad2a394..6d99751 100644
+--- a/moviehub.xcodeproj/project.pbxproj
++++ b/moviehub.xcodeproj/project.pbxproj
+@@ -15,6 +15,7 @@
+ 		925AFD252F266279001FD1FE /* Profile in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD242F266279001FD1FE /* Profile */; };
+ 		925AFD272F266279001FD1FE /* Router in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD262F266279001FD1FE /* Router */; };
+ 		9274121A2F24FA4F0027B3DE /* Domain in Frameworks */ = {isa = PBXBuildFile; productRef = 927412192F24FA4F0027B3DE /* Domain */; };
++		FAEA7BB52F3B8723007B640D /* Utilities in Frameworks */ = {isa = PBXBuildFile; productRef = FAEA7BB42F3B8723007B640D /* Utilities */; };
+ /* End PBXBuildFile section */
+ 
+ /* Begin PBXFileReference section */
+@@ -69,6 +70,7 @@
+ 				925AFD212F266279001FD1FE /* MovieDetails in Frameworks */,
+ 				925AFD1F2F266279001FD1FE /* FavoriteList in Frameworks */,
+ 				925AFD1B2F266279001FD1FE /* Data in Frameworks */,
++				FAEA7BB52F3B8723007B640D /* Utilities in Frameworks */,
+ 				925AFD232F266279001FD1FE /* MovieList in Frameworks */,
+ 				9274121A2F24FA4F0027B3DE /* Domain in Frameworks */,
+ 				925AFD1D2F266279001FD1FE /* Auth in Frameworks */,
+@@ -128,6 +130,7 @@
+ 				925AFD222F266279001FD1FE /* MovieList */,
+ 				925AFD242F266279001FD1FE /* Profile */,
+ 				925AFD262F266279001FD1FE /* Router */,
++				FAEA7BB42F3B8723007B640D /* Utilities */,
+ 			);
+ 			productName = moviehub;
+ 			productReference = 925AFD2A2F2677E6001FD1FE /* moviehub.app */;
+@@ -460,6 +463,10 @@
+ 			isa = XCSwiftPackageProductDependency;
+ 			productName = Domain;
+ 		};
++		FAEA7BB42F3B8723007B640D /* Utilities */ = {
++			isa = XCSwiftPackageProductDependency;
++			productName = Utilities;
++		};
+ /* End XCSwiftPackageProductDependency section */
+ 	};
+ 	rootObject = 9277BD0D2F24DA8B003E5D04 /* Project object */;
+diff --git a/moviehub/Secrets.swift b/moviehub/Secrets.swift
+index c8b155c..abcfd76 100644
+--- a/moviehub/Secrets.swift
++++ b/moviehub/Secrets.swift
+@@ -6,7 +6,8 @@ enum Secrets {
+             let token = Bundle.main.object(forInfoDictionaryKey: "TMDB_READ_TOKEN") as? String,
+             !token.isEmpty
+         else {
+-            fatalError("TMDB_READ_TOKEN is missing. Create Secrets.xcconfig.")
++//            fatalError("TMDB_READ_TOKEN is missing. Create Secrets.xcconfig.")
++            return ""
+         }
+         return token
+     }

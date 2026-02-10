@@ -13,9 +13,7 @@ struct AuthButtonViewModelTests {
         let session = SessionInteractorMock(currentUser: user)
         let viewModel = AuthButtonViewModel(sessionInteractor: session, router: router)
 
-        let titles = await recordChanges(count: 1, observe: { viewModel.title })
-
-        #expect(titles.last == "alex")
+        #expect(viewModel.title == "alex")
     }
 
     @Test
@@ -35,8 +33,6 @@ struct AuthButtonViewModelTests {
         let user = User(id: UserID("u1"), username: "alex")
         let session = SessionInteractorMock(currentUser: user)
         let viewModel = AuthButtonViewModel(sessionInteractor: session, router: router)
-
-        _ = await recordChanges(count: 1, observe: { viewModel.title })
 
         viewModel.tapped()
 

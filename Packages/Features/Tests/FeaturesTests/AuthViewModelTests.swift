@@ -12,11 +12,9 @@ struct AuthViewModelTests {
         let viewModel = AuthViewModel(sessionInteractor: session, router: router)
 
         viewModel.username = " "
-        let states = await recordChanges(count: 1, observe: { viewModel.state }) {
-            viewModel.loginTapped()
-        }
+        await viewModel.login()
 
-        guard case .error(let message) = states.last else {
+        guard case .error(let message) = viewModel.state else {
             fail("Expected error state for empty username")
             return
         }
@@ -30,11 +28,9 @@ struct AuthViewModelTests {
         let viewModel = AuthViewModel(sessionInteractor: session, router: router)
 
         viewModel.username = "Alex"
-        let states = await recordChanges(count: 2, observe: { viewModel.state }) {
-            viewModel.loginTapped()
-        }
+        await viewModel.login()
 
-        #expect(states.contains(.success))
+        #expect(viewModel.state == .success)
         #expect(router.didDismissSheet == true)
     }
 }

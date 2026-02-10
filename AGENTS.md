@@ -16,7 +16,7 @@ These instructions describe how an LLM should work in this repository. Follow th
 - Business logic + data state (e.g., current user, favorites state).
 - Models, errors, utilities.
 - Protocols for repositories + interactors.
-- Interactors own data state and expose `AsyncStream`.
+- Interactors own data state; ViewModels subscribe via `observeChanges` from `Utilities`.
 - `DomainMocks` product contains mocks for previews/tests.
 
 **Data**
@@ -46,15 +46,25 @@ These instructions describe how an LLM should work in this repository. Follow th
 - App renders destinations from Router state.
 - Each tab has its own `NavigationStack` path.
 
+## Utilities package
+- Cross-platform helpers shared by Domain and Features.
+- `observeChanges(_:onChange:)` — loop-based observation helper that subscribes to an `@Observable` property via a read closure and delivers changes. Use this instead of manual `withObservationTracking` loops.
+- Usage: `observeChanges({ interactor.currentUser }) { [weak self] user in self?.currentUser = user }`
+- Sync and async `onChange` overloads are available.
+
 ## Builders and ViewModels
 - Screens accept a `ViewModel` in the initializer (generated init).
 - ViewModels are `@Observable` and `@MainActor`.
 - ViewModels should not be `public init` unless needed outside the builder.
 - `AuthButtonBuilder` is stored inside ViewModels (not screens).
+- ViewModels expose sync methods for SwiftUI (e.g., `loginTapped()`) that wrap internal async methods (e.g., `func login() async`). The async methods have `internal` access so tests can call them directly via `@testable import`.
 
 ## Testing
 - Use **Swift Testing**.
-- Tests should rely on `withObservationTracking` to observe state changes.
+- Tests call internal async methods directly via `@testable import` — no observation tracking, polling, or timeouts in tests.
+- Pattern: `await viewModel.login()` then `#expect(viewModel.state == .success)`.
+- Do **not** use `withObservationTracking` or `waitForChange` helpers in tests.
+- For computed-state ViewModels (e.g., `FavoriteListViewModel`), set properties directly and assert the computed state.
 - Use mocks from `DomainMocks` in Feature tests.
 - Prefer `swift test` for fast validation:
   - `cd Packages/Domain && swift test`

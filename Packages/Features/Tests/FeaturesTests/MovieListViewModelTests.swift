@@ -23,9 +23,7 @@ struct MovieListViewModelTests {
             authButtonBuilder: authButtonBuilder
         )
 
-        let states = await recordChanges(count: 2, observe: { viewModel.state }) {
-            viewModel.submitSearch()
-        }
+        await viewModel.search()
 
         guard case .loaded(let movies) = viewModel.state else {
             fail("Expected loaded state after search")
@@ -33,7 +31,5 @@ struct MovieListViewModelTests {
         }
         #expect(movies.count == 1)
         #expect(movies.first?.title == "Test")
-        #expect(states.contains { if case .loading = $0 { true } else { false } })
-        #expect(states.contains { if case .loaded = $0 { true } else { false } })
     }
 }

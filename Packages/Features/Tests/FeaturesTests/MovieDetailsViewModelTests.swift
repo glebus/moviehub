@@ -32,17 +32,13 @@ struct MovieDetailsViewModelTests {
             authButtonBuilder: authButtonBuilder
         )
 
-        let states = await recordChanges(count: 2, observe: { viewModel.state }) {
-            viewModel.onAppear()
-        }
+        await viewModel.loadDetails()
 
         guard case .loaded(let model) = viewModel.state else {
             fail("Expected loaded state after onAppear")
             return
         }
         #expect(model.title == "Details")
-        #expect(states.contains { if case .loading = $0 { true } else { false } })
-        #expect(states.contains { if case .loaded = $0 { true } else { false } })
     }
 
     @Test
@@ -70,14 +66,9 @@ struct MovieDetailsViewModelTests {
             authButtonBuilder: authButtonBuilder
         )
 
-        _ = await recordChanges(count: 2, observe: { viewModel.state }) {
-            viewModel.onAppear()
-        }
+        await viewModel.loadDetails()
+        await viewModel.toggleFavorite()
 
-        let sheetValues = await recordChanges(count: 1, observe: { router.lastSheetDestination }) {
-            viewModel.favoriteButtonTapped()
-        }
-
-        #expect(sheetValues.last == .auth)
+        #expect(router.lastSheetDestination == .auth)
     }
 }

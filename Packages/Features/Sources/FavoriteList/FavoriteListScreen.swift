@@ -8,39 +8,41 @@ public struct FavoriteListScreen: View {
 
     public var body: some View {
         Group {
-            switch viewModel.state {
-            case .loggedOut:
+            if viewModel.currentUser == nil {
                 VStack {
                     Text("Not logged in")
                         .font(.headline)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .loading:
-                ProgressView()
-            case .loaded(let favorites):
-                List(favorites, id: \.id) { movie in
-                    Button {
-                        viewModel.select(movieId: movie.id)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(movie.title)
-                                .font(.headline)
-                            if let year = movie.year {
-                                Text(year)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+            } else {
+                if viewModel.favorites.isEmpty {
+                    VStack {
+                        Text("No favorites")
+                            .font(.headline)
+                    }
+                } else {
+                    List(viewModel.favorites, id: \.id) { movie in
+                        Button {
+                            viewModel.select(movieId: movie.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(movie.title)
+                                    .font(.headline)
+                                if let year = movie.year {
+                                    Text(year)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
-            case .error(let message):
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
             }
         }
         .navigationTitle("Favorites")
+        .onAppear {
+            viewModel.onAppear()
+        }
         .toolbar {
             viewModel.authButtonBuilder.build()
         }

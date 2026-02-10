@@ -1,33 +1,23 @@
+import Observation
 import Domain
 
 @MainActor
+@Observable
 public final class SessionInteractorMock: SessionInteractorProtocol {
-    private let subject: AsyncStreamSubject<User?>
-    private var currentUserCache: User?
+    public private(set) var currentUser: User?
 
     public init(currentUser: User? = nil) {
-        self.currentUserCache = currentUser
-        self.subject = AsyncStreamSubject(initial: currentUser)
-    }
-
-    public func currentUser() -> User? {
-        currentUserCache
-    }
-
-    public var currentUserStream: AsyncStream<User?> {
-        subject.stream
+        self.currentUser = currentUser
     }
 
     public func login(username: String) async throws -> User {
         let normalized = UsernameNormalizer.normalize(username)
         let user = User(id: UserID(normalized), username: normalized)
-        currentUserCache = user
-        await subject.send(user)
+        currentUser = user
         return user
     }
 
     public func logout() async {
-        currentUserCache = nil
-        await subject.send(nil)
+        currentUser = nil
     }
 }

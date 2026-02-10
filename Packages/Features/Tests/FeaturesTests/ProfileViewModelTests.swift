@@ -18,14 +18,11 @@ struct ProfileViewModelTests {
             authButtonBuilder: authButtonBuilder
         )
 
-        let states = await recordChanges(count: 1, observe: { viewModel.state })
-
         guard case .loggedIn(let username) = viewModel.state else {
             fail("Expected loggedIn state for existing user")
             return
         }
         #expect(username == "alex")
-        #expect(states.contains { if case .loggedIn = $0 { true } else { false } })
     }
 
     @Test
@@ -39,16 +36,11 @@ struct ProfileViewModelTests {
             authButtonBuilder: authButtonBuilder
         )
 
-        _ = await recordChanges(count: 1, observe: { viewModel.state })
-
-        let states = await recordChanges(count: 1, observe: { viewModel.state }) {
-            viewModel.logoutTapped()
-        }
+        await viewModel.logout()
 
         guard case .loggedOut = viewModel.state else {
             fail("Expected loggedOut state after logout")
             return
         }
-        #expect(states.contains { if case .loggedOut = $0 { true } else { false } })
     }
 }

@@ -1,18 +1,19 @@
 import Foundation
+import Observation
+import Utilities
 
 @MainActor
+@Observable
 public final class FavoritesInteractor: FavoritesInteractorProtocol {
     private let favoritesRepository: FavoritesRepositoryProtocol
     private let sessionInteractor: SessionInteractor
-    private let subject: AsyncStreamSubject<[Movie]>
-    private var favoritesCache: [Movie]
-    nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
+    public private(set) var favorites: [Movie]
+    @ObservationIgnored private var sessionTask: Task<Void, Never>?
 
     public init(favoritesRepository: FavoritesRepositoryProtocol, sessionInteractor: SessionInteractor) {
         self.favoritesRepository = favoritesRepository
         self.sessionInteractor = sessionInteractor
-        self.favoritesCache = []
-        self.subject = AsyncStreamSubject(initial: [])
+        self.favorites = []
         observeSession()
     }
 
@@ -20,25 +21,16 @@ public final class FavoritesInteractor: FavoritesInteractorProtocol {
         sessionTask?.cancel()
     }
 
-    public func favorites() -> [Movie] {
-        favoritesCache
-    }
-
-    public var favoritesStream: AsyncStream<[Movie]> {
-        subject.stream
-    }
-
     public func refresh() async throws {
-        guard let user = sessionInteractor.currentUser() else {
+        guard let user = sessionInteractor.currentUser else {
             throw AuthRequiredError()
         }
         let updated = try await favoritesRepository.fetchFavorites(userId: user.id)
-        favoritesCache = updated
-        await subject.send(updated)
+        favorites = updated
     }
 
     public func toggle(movie: MovieDetails) async throws -> Bool {
-        guard let user = sessionInteractor.currentUser() else {
+        guard let user = sessionInteractor.currentUser else {
             throw AuthRequiredError()
         }
 
@@ -54,20 +46,21 @@ public final class FavoritesInteractor: FavoritesInteractorProtocol {
     }
 
     public func isFavorite(movieId: MovieID) -> Bool {
-        favoritesCache.contains { $0.id == movieId }
+        favorites.contains { $0.id == movieId }
     }
 
     private func observeSession() {
-        sessionTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            for await user in sessionInteractor.currentUserStream {
-                if user == nil {
-                    favoritesCache = []
-                    await subject.send([])
-                } else {
-                    try? await refresh()
-                }
-            }
+        sessionTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
+            await self?.handleSessionChange(user)
+        }
+    }
+
+    func handleSessionChange(_ user: User?) async {
+        if user == nil {
+            favorites = []
+        } else {
+            try? await refresh()
         }
     }
 }
+

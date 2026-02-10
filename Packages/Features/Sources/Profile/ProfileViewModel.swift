@@ -3,6 +3,7 @@ import Observation
 import Domain
 import Router
 import AuthButton
+import Utilities
 
 @MainActor
 @Observable
@@ -32,6 +33,7 @@ public final class ProfileViewModel {
         self.state = .loggedOut
         self.isAuthSheetPresented = false
         self.errorMessage = nil
+        applyProfile(sessionInteractor.currentUser)
         subscribeToProfile()
     }
 
@@ -40,19 +42,25 @@ public final class ProfileViewModel {
     }
 
     public func logoutTapped() {
-        Task { await sessionInteractor.logout() }
+        Task { await logout() }
+    }
+
+    func logout() async {
+        await sessionInteractor.logout()
+        applyProfile(sessionInteractor.currentUser)
     }
 
     private func subscribeToProfile() {
-        profileTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            for await user in sessionInteractor.currentUserStream {
-                if let user {
-                    self.state = .loggedIn(username: user.username)
-                } else {
-                    self.state = .loggedOut
-                }
-            }
+        profileTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
+            self?.applyProfile(user)
+        }
+    }
+
+    private func applyProfile(_ user: User?) {
+        if let user {
+            state = .loggedIn(username: user.username)
+        } else {
+            state = .loggedOut
         }
     }
 }

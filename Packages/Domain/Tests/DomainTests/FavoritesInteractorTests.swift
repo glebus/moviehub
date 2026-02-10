@@ -1,37 +1,41 @@
 import Testing
-import Domain
+@testable import Domain
 import DomainMocks
 
 @MainActor
 struct FavoritesInteractorTests {
     @Test
-    func streamEmitsOnSessionChange() async throws {
+    func refreshLoadsFavorites() async throws {
         let profileRepo = ProfileRepositoryMock()
         let favoritesRepo = FavoritesRepositoryMock()
         let session = SessionInteractor(profileRepository: profileRepo)
         let interactor = FavoritesInteractor(favoritesRepository: favoritesRepo, sessionInteractor: session)
 
-        var iterator = interactor.favoritesStream.makeAsyncIterator()
-        let initial = await iterator.next() ?? []
-        #expect(initial == [])
+        #expect(interactor.favorites == [])
 
         let user = try await session.login(username: "user")
         let seeded = Movie(id: MovieID("m1"), title: "Movie", year: nil, posterURL: nil)
         await favoritesRepo.seedFavorites([seeded], for: user.id)
 
         try await interactor.refresh()
-        var refreshed = await iterator.next() ?? []
-        if refreshed.isEmpty {
-            refreshed = await iterator.next() ?? []
-        }
-        #expect(refreshed == [seeded])
+        #expect(interactor.favorites == [seeded])
+    }
 
-        await session.logout()
-        var cleared = await iterator.next() ?? [seeded]
-        if cleared == [seeded] {
-            cleared = await iterator.next() ?? [seeded]
-        }
-        #expect(cleared == [])
+    @Test
+    func handleSessionChangeClearsFavoritesOnLogout() async throws {
+        let profileRepo = ProfileRepositoryMock()
+        let favoritesRepo = FavoritesRepositoryMock()
+        let session = SessionInteractor(profileRepository: profileRepo)
+        let interactor = FavoritesInteractor(favoritesRepository: favoritesRepo, sessionInteractor: session)
+
+        let user = try await session.login(username: "user")
+        let seeded = Movie(id: MovieID("m1"), title: "Movie", year: nil, posterURL: nil)
+        await favoritesRepo.seedFavorites([seeded], for: user.id)
+        try await interactor.refresh()
+        #expect(interactor.favorites == [seeded])
+
+        await interactor.handleSessionChange(nil)
+        #expect(interactor.favorites == [])
     }
 
     @Test
