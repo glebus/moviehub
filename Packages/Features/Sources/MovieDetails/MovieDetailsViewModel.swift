@@ -25,12 +25,13 @@ public final class MovieDetailsViewModel {
     private let movieRepository: MovieRepositoryProtocol
     private let sessionInteractor: SessionInteractorProtocol
     private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let favoritesRepository: FavoritesRepositoryProtocol
+    private let favoritesInteractor: FavoritesInteractorProtocol
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
     @ObservationIgnored nonisolated(unsafe) private var listsTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var favoritesTask: Task<Void, Never>?
     private var currentUser: User?
     private var movieDetails: MovieDetails?
     private var lists: [FavoriteList] = []
@@ -40,7 +41,7 @@ public final class MovieDetailsViewModel {
         movieRepository: MovieRepositoryProtocol,
         sessionInteractor: SessionInteractorProtocol,
         favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol,
+        favoritesInteractor: FavoritesInteractorProtocol,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
@@ -48,7 +49,7 @@ public final class MovieDetailsViewModel {
         self.movieRepository = movieRepository
         self.sessionInteractor = sessionInteractor
         self.favoriteListsInteractor = favoriteListsInteractor
-        self.favoritesRepository = favoritesRepository
+        self.favoritesInteractor = favoritesInteractor
         self.router = router
         self.authButtonBuilder = authButtonBuilder
         self.state = .idle
@@ -60,11 +61,13 @@ public final class MovieDetailsViewModel {
         applySession(sessionInteractor.currentUser)
         subscribeToSession()
         subscribeToLists()
+        subscribeToFavoriteUpdates()
     }
 
     deinit {
         sessionTask?.cancel()
         listsTask?.cancel()
+        favoritesTask?.cancel()
     }
 
     public func onAppear() {
@@ -112,6 +115,14 @@ public final class MovieDetailsViewModel {
         }
     }
 
+    private func subscribeToFavoriteUpdates() {
+        favoritesTask = observeChanges({ [favoritesInteractor] in favoritesInteractor.favoriteListByMovie }) { [weak self] map in
+            guard let details = self?.movieDetails else { return }
+            self?.isFavorite = map[details.id] != nil
+            self?.updateFavoriteButtonTitle()
+        }
+    }
+
     private func applySession(_ user: User?) {
         currentUser = user
         favoriteButtonEnabled = user != nil
@@ -127,7 +138,7 @@ public final class MovieDetailsViewModel {
 
         do {
             if isFavorite {
-                try await favoritesRepository.removeFavorite(userId: user.id, movieId: details.id)
+                try await favoritesInteractor.removeFavorite(movieId: details.id)
                 isFavorite = false
                 updateFavoriteButtonTitle()
                 return
@@ -148,13 +159,13 @@ public final class MovieDetailsViewModel {
     }
 
     private func refreshFavoriteStatus() async {
-        guard let details = movieDetails, let user = currentUser else {
+        guard let details = movieDetails, currentUser != nil else {
             isFavorite = false
             updateFavoriteButtonTitle()
             return
         }
         do {
-            let listId = try await favoritesRepository.favoriteListId(userId: user.id, movieId: details.id)
+            let listId = try await favoritesInteractor.favoriteListId(movieId: details.id)
             isFavorite = listId != nil
         } catch {
             isFavorite = false

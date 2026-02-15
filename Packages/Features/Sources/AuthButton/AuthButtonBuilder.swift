@@ -13,7 +13,7 @@ public struct AuthButtonBuilder {
         self.router = router
     }
 
-    public func build() -> AuthButton {
+    public func build() -> some ToolbarContent {
         let viewModel = AuthButtonViewModel(sessionInteractor: sessionInteractor, router: router)
         return AuthButton(viewModel: viewModel)
     }

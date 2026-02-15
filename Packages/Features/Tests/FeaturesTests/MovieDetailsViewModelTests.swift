@@ -12,11 +12,15 @@ struct MovieDetailsViewModelTests {
         let router = AppRouterMock()
         let session = SessionInteractorMock()
         let listsRepository = FavoriteListsRepositoryMock()
-        let listsInteractor = FavoriteListsInteractor(
+        let favoritesRepository = FavoritesRepositoryMock()
+        let favoriteListsInteractor = FavoriteListsInteractor(
             listsRepository: listsRepository,
             sessionInteractor: session
         )
-        let favoritesRepository = FavoritesRepositoryMock()
+        let favoritesInteractor = FavoritesInteractor(
+            favoritesRepository: favoritesRepository,
+            sessionInteractor: session
+        )
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let repo = MovieRepositoryMock(
             detailsResult: MovieDetails(
@@ -32,8 +36,8 @@ struct MovieDetailsViewModelTests {
             movieId: MovieID("10"),
             movieRepository: repo,
             sessionInteractor: session,
-            favoriteListsInteractor: listsInteractor,
-            favoritesRepository: favoritesRepository,
+            favoriteListsInteractor: favoriteListsInteractor,
+            favoritesInteractor: favoritesInteractor,
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -52,11 +56,15 @@ struct MovieDetailsViewModelTests {
         let router = AppRouterMock()
         let session = SessionInteractorMock(currentUser: nil)
         let listsRepository = FavoriteListsRepositoryMock()
-        let listsInteractor = FavoriteListsInteractor(
+        let favoritesRepository = FavoritesRepositoryMock()
+        let favoriteListsInteractor = FavoriteListsInteractor(
             listsRepository: listsRepository,
             sessionInteractor: session
         )
-        let favoritesRepository = FavoritesRepositoryMock()
+        let favoritesInteractor = FavoritesInteractor(
+            favoritesRepository: favoritesRepository,
+            sessionInteractor: session
+        )
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let repo = MovieRepositoryMock(
             detailsResult: MovieDetails(
@@ -72,8 +80,8 @@ struct MovieDetailsViewModelTests {
             movieId: MovieID("10"),
             movieRepository: repo,
             sessionInteractor: session,
-            favoriteListsInteractor: listsInteractor,
-            favoritesRepository: favoritesRepository,
+            favoriteListsInteractor: favoriteListsInteractor,
+            favoritesInteractor: favoritesInteractor,
             router: router,
             authButtonBuilder: authButtonBuilder
         )

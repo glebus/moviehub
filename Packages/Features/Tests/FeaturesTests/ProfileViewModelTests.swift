@@ -14,13 +14,13 @@ struct ProfileViewModelTests {
         let session = SessionInteractorMock(currentUser: User(id: UserID("u1"), username: "alex"))
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let listsRepository = FavoriteListsRepositoryMock()
-        let listsInteractor = FavoriteListsInteractor(
+        let favoriteListsInteractor = FavoriteListsInteractor(
             listsRepository: listsRepository,
             sessionInteractor: session
         )
         let listsManageBuilder = FavoriteListsManageBuilder(
             sessionInteractor: session,
-            favoriteListsInteractor: listsInteractor,
+            favoriteListsInteractor: favoriteListsInteractor,
             router: router
         )
         let viewModel = ProfileViewModel(
@@ -43,13 +43,13 @@ struct ProfileViewModelTests {
         let session = SessionInteractorMock(currentUser: User(id: UserID("u1"), username: "alex"))
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let listsRepository = FavoriteListsRepositoryMock()
-        let listsInteractor = FavoriteListsInteractor(
+        let favoriteListsInteractor = FavoriteListsInteractor(
             listsRepository: listsRepository,
             sessionInteractor: session
         )
         let listsManageBuilder = FavoriteListsManageBuilder(
             sessionInteractor: session,
-            favoriteListsInteractor: listsInteractor,
+            favoriteListsInteractor: favoriteListsInteractor,
             router: router
         )
         let viewModel = ProfileViewModel(

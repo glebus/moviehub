@@ -7,6 +7,7 @@ final class AppContainer {
     let swiftDataStorage: SwiftDataStorage
     let sessionInteractor: SessionInteractor
     let favoriteListsInteractor: FavoriteListsInteractor
+    let favoritesInteractor: FavoritesInteractor
 
     init() {
         let httpClient = URLSessionHTTPClient()
@@ -21,6 +22,10 @@ final class AppContainer {
         self.sessionInteractor = SessionInteractor(profileRepository: swiftDataStorage)
         self.favoriteListsInteractor = FavoriteListsInteractor(
             listsRepository: swiftDataStorage,
+            sessionInteractor: sessionInteractor
+        )
+        self.favoritesInteractor = FavoritesInteractor(
+            favoritesRepository: swiftDataStorage,
             sessionInteractor: sessionInteractor
         )
     }

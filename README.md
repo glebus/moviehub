@@ -33,7 +33,10 @@ The minimum goal is to keep `Domain` cross‑platform; for `Data` we can split i
 - Business logic and data state (e.g., current user) not tied to UI
 - Models, errors, utilities
 - Protocols for data access
-- Interactors (data state + Observation via `observeChanges`)
+- Interactors (data state + Observation via `observeChanges`):
+  - `SessionInteractor` — user session (login/logout)
+  - `FavoriteListsInteractor` — list CRUD (create, rename, delete, refresh)
+  - `FavoritesInteractor` — movie-in-list operations (add/remove favorite, lookup, in-memory caches)
 - `DomainMocks` for previews/tests (kept here for convenience)
 
 **Data**
@@ -124,6 +127,6 @@ await viewModel.login()
 ## Notes
 - Minimum platforms: iOS 17, macOS 15
 - No Combine
-- Data state lives in Domain Interactors
+- Data state lives in Domain Interactors (split by concern: lists vs favorites vs session)
 - View state lives in ViewModels
 - Observation subscriptions use `observeChanges` from Utilities (not manual `withObservationTracking` loops)

@@ -13,7 +13,7 @@ public struct AuthBuilder {
         self.router = router
     }
 
-    public func build() -> AuthScreen {
+    public func build() -> some View {
         let viewModel = AuthViewModel(sessionInteractor: sessionInteractor, router: router)
         return AuthScreen(viewModel: viewModel)
     }

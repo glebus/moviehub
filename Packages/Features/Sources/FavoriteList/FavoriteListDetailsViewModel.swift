@@ -16,30 +16,31 @@ public final class FavoriteListDetailsViewModel {
     private let listId: FavoriteListID
     private let sessionInteractor: SessionInteractorProtocol
     private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let favoritesRepository: FavoritesRepositoryProtocol
+    private let favoritesInteractor: FavoritesInteractorProtocol
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
     @ObservationIgnored private var listsTask: Task<Void, Never>?
+    @ObservationIgnored private var favoritesTask: Task<Void, Never>?
 
     init(
         listId: FavoriteListID,
         sessionInteractor: SessionInteractorProtocol,
         favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol,
+        favoritesInteractor: FavoritesInteractorProtocol,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.listId = listId
         self.sessionInteractor = sessionInteractor
         self.favoriteListsInteractor = favoriteListsInteractor
-        self.favoritesRepository = favoritesRepository
+        self.favoritesInteractor = favoritesInteractor
         self.router = router
         self.authButtonBuilder = authButtonBuilder
         self.listName = "List"
         self.listColor = .slate
-        self.favorites = []
+        self.favorites = favoritesInteractor.favoritesByList[listId] ?? []
         self.errorMessage = nil
         applySession(sessionInteractor.currentUser)
         applyLists(favoriteListsInteractor.lists)
@@ -48,11 +49,13 @@ public final class FavoriteListDetailsViewModel {
     deinit {
         sessionTask?.cancel()
         listsTask?.cancel()
+        favoritesTask?.cancel()
     }
 
     public func onAppear() {
         subscribeToSession()
         subscribeToLists()
+        subscribeToFavorites()
         Task {
             try? await favoriteListsInteractor.refresh()
             await refreshFavorites()
@@ -78,6 +81,14 @@ public final class FavoriteListDetailsViewModel {
         }
     }
 
+    private func subscribeToFavorites() {
+        favoritesTask?.cancel()
+        let listId = self.listId
+        favoritesTask = observeChanges({ [favoritesInteractor] in favoritesInteractor.favoritesByList }) { [weak self] favoritesByList in
+            self?.favorites = favoritesByList[listId] ?? []
+        }
+    }
+
     private func applySession(_ user: User?) {
         currentUser = user
         if user == nil {
@@ -93,9 +104,8 @@ public final class FavoriteListDetailsViewModel {
     }
 
     private func refreshFavorites() async {
-        guard let user = currentUser else { return }
         do {
-            favorites = try await favoritesRepository.fetchFavorites(userId: user.id, listId: listId)
+            try await favoritesInteractor.refreshFavorites(listId: listId)
         } catch {
             errorMessage = error.localizedDescription
         }

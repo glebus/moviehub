@@ -17,7 +17,11 @@ These instructions describe how an LLM should work in this repository. Follow th
 - Models, errors, utilities.
 - Protocols for repositories + interactors.
 - Interactors own data state; ViewModels subscribe via `observeChanges` from `Utilities`.
-- `DomainMocks` product contains mocks for previews/tests.
+- Interactors are split by responsibility:
+  - `FavoriteListsInteractor` — list CRUD (create, rename, delete, refresh).
+  - `FavoritesInteractor` — movie-in-list operations (add/remove favorite, lookup, caches).
+  - `SessionInteractor` — user session (login/logout).
+- `DomainMocks` product contains mocks for previews/tests (repository mocks + `FavoriteListsInteractorMock`).
 
 **Data**
 - Implements Domain protocols.
@@ -36,8 +40,9 @@ These instructions describe how an LLM should work in this repository. Follow th
 - Presents screens based on Router state.
 
 ## Naming conventions
-- Protocols must end with `Protocol` (e.g., `MovieRepositoryProtocol`, `SessionInteractorProtocol`, `AppRouterProtocol`).
+- Protocols must end with `Protocol` (e.g., `MovieRepositoryProtocol`, `SessionInteractorProtocol`, `FavoriteListsInteractorProtocol`, `AppRouterProtocol`).
 - Concrete implementations use the base name without `Protocol`.
+- When a feature needs both list management and movie-favorite operations, inject both `FavoriteListsInteractorProtocol` and `FavoritesInteractorProtocol`. When it only needs one concern, inject only that one.
 
 ## Navigation
 - Router owns navigation state:

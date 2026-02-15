@@ -13,14 +13,14 @@ struct FavoriteListViewModelTests {
         let router = AppRouterMock()
         let session = SessionInteractorMock(currentUser: nil)
         let listsRepository = FavoriteListsRepositoryMock()
-        let listsInteractor = FavoriteListsInteractor(
+        let favoriteListsInteractor = FavoriteListsInteractor(
             listsRepository: listsRepository,
             sessionInteractor: session
         )
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let viewModel = FavoriteListViewModel(
             sessionInteractor: session,
-            favoriteListsInteractor: listsInteractor,
+            favoriteListsInteractor: favoriteListsInteractor,
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -36,14 +36,14 @@ struct FavoriteListViewModelTests {
         let router = AppRouterMock()
         let session = SessionInteractorMock(currentUser: nil)
         let listsRepository = FavoriteListsRepositoryMock()
-        let listsInteractor = FavoriteListsInteractor(
+        let favoriteListsInteractor = FavoriteListsInteractor(
             listsRepository: listsRepository,
             sessionInteractor: session
         )
         let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let viewModel = FavoriteListViewModel(
             sessionInteractor: session,
-            favoriteListsInteractor: listsInteractor,
+            favoriteListsInteractor: favoriteListsInteractor,
             router: router,
             authButtonBuilder: authButtonBuilder
         )

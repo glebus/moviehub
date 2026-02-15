@@ -9,7 +9,10 @@ struct FavoriteListsInteractorTests {
     func refreshLoadsLists() async throws {
         let listsRepo = FavoriteListsRepositoryMock()
         let session = SessionInteractorMock()
-        let interactor = FavoriteListsInteractor(listsRepository: listsRepo, sessionInteractor: session)
+        let interactor = FavoriteListsInteractor(
+            listsRepository: listsRepo,
+            sessionInteractor: session
+        )
 
         #expect(interactor.lists == [])
 
@@ -30,7 +33,10 @@ struct FavoriteListsInteractorTests {
     func handleSessionChangeClearsListsOnLogout() async throws {
         let listsRepo = FavoriteListsRepositoryMock()
         let session = SessionInteractorMock()
-        let interactor = FavoriteListsInteractor(listsRepository: listsRepo, sessionInteractor: session)
+        let interactor = FavoriteListsInteractor(
+            listsRepository: listsRepo,
+            sessionInteractor: session
+        )
 
         let user = try await session.login(username: "user")
         let seeded = FavoriteList(
@@ -51,7 +57,10 @@ struct FavoriteListsInteractorTests {
     func createRenameDeleteList() async throws {
         let listsRepo = FavoriteListsRepositoryMock()
         let session = SessionInteractorMock()
-        let interactor = FavoriteListsInteractor(listsRepository: listsRepo, sessionInteractor: session)
+        let interactor = FavoriteListsInteractor(
+            listsRepository: listsRepo,
+            sessionInteractor: session
+        )
 
         _ = try await session.login(username: "user")
 

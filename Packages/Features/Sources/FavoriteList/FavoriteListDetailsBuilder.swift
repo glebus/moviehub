@@ -8,7 +8,7 @@ public struct FavoriteListDetailsBuilder {
     private let listId: FavoriteListID
     private let sessionInteractor: SessionInteractorProtocol
     private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let favoritesRepository: FavoritesRepositoryProtocol
+    private let favoritesInteractor: FavoritesInteractorProtocol
     private let router: AppRouterProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
@@ -16,24 +16,24 @@ public struct FavoriteListDetailsBuilder {
         listId: FavoriteListID,
         sessionInteractor: SessionInteractorProtocol,
         favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol,
+        favoritesInteractor: FavoritesInteractorProtocol,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.listId = listId
         self.sessionInteractor = sessionInteractor
         self.favoriteListsInteractor = favoriteListsInteractor
-        self.favoritesRepository = favoritesRepository
+        self.favoritesInteractor = favoritesInteractor
         self.router = router
         self.authButtonBuilder = authButtonBuilder
     }
 
-    public func build() -> FavoriteListDetailsScreen {
+    public func build() -> some View {
         let viewModel = FavoriteListDetailsViewModel(
             listId: listId,
             sessionInteractor: sessionInteractor,
             favoriteListsInteractor: favoriteListsInteractor,
-            favoritesRepository: favoritesRepository,
+            favoritesInteractor: favoritesInteractor,
             router: router,
             authButtonBuilder: authButtonBuilder
         )

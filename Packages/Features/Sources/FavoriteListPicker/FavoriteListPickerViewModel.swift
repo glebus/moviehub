@@ -14,7 +14,7 @@ public final class FavoriteListPickerViewModel {
     private let movieDetails: MovieDetails
     private let sessionInteractor: SessionInteractorProtocol
     private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let favoritesRepository: FavoritesRepositoryProtocol
+    private let favoritesInteractor: FavoritesInteractorProtocol
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
@@ -25,14 +25,14 @@ public final class FavoriteListPickerViewModel {
         movieDetails: MovieDetails,
         sessionInteractor: SessionInteractorProtocol,
         favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol,
+        favoritesInteractor: FavoritesInteractorProtocol,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieDetails = movieDetails
         self.sessionInteractor = sessionInteractor
         self.favoriteListsInteractor = favoriteListsInteractor
-        self.favoritesRepository = favoritesRepository
+        self.favoritesInteractor = favoritesInteractor
         self.router = router
         self.authButtonBuilder = authButtonBuilder
         self.lists = favoriteListsInteractor.lists
@@ -75,13 +75,13 @@ public final class FavoriteListPickerViewModel {
     }
 
     private func addToList(listId: FavoriteListID) async {
-        guard let user = currentUser else {
+        guard currentUser != nil else {
             router.present(.auth)
             return
         }
 
         do {
-            try await favoritesRepository.addFavorite(userId: user.id, movie: movieDetails, listId: listId)
+            try await favoritesInteractor.addFavorite(movie: movieDetails, listId: listId)
             router.dismissSheet()
         } catch {
             errorMessage = error.localizedDescription

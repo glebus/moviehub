@@ -21,7 +21,7 @@ struct AppNavigationDestinationModifier: ViewModifier {
                     movieRepository: container.movieRepository,
                     sessionInteractor: container.sessionInteractor,
                     favoriteListsInteractor: container.favoriteListsInteractor,
-                    favoritesRepository: container.swiftDataStorage,
+                    favoritesInteractor: container.favoritesInteractor,
                     router: router,
                     authButtonBuilder: authButtonBuilder
                 ).build(movieId: movieId)
@@ -30,7 +30,7 @@ struct AppNavigationDestinationModifier: ViewModifier {
                     listId: listId,
                     sessionInteractor: container.sessionInteractor,
                     favoriteListsInteractor: container.favoriteListsInteractor,
-                    favoritesRepository: container.swiftDataStorage,
+                    favoritesInteractor: container.favoritesInteractor,
                     router: router,
                     authButtonBuilder: authButtonBuilder
                 ).build()
@@ -57,7 +57,7 @@ struct AppPresentationModifier: ViewModifier {
                         movieDetails: details,
                         sessionInteractor: container.sessionInteractor,
                         favoriteListsInteractor: container.favoriteListsInteractor,
-                        favoritesRepository: container.swiftDataStorage,
+                        favoritesInteractor: container.favoritesInteractor,
                         router: router,
                         authButtonBuilder: AuthButtonBuilder(
                             sessionInteractor: container.sessionInteractor,

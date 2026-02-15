@@ -24,7 +24,7 @@ public struct ProfileBuilder {
         self.favoriteListsManageBuilder = favoriteListsManageBuilder
     }
 
-    public func build() -> ProfileScreen {
+    public func build() -> some View {
         let viewModel = ProfileViewModel(
             sessionInteractor: sessionInteractor,
             router: router,
@@ -38,7 +38,7 @@ public struct ProfileBuilder {
         let router = AppRouterMock()
         let session = SessionInteractorMock()
         let listsRepository = FavoriteListsRepositoryMock()
-        let listsInteractor = FavoriteListsInteractor(
+        let favoriteListsInteractor = FavoriteListsInteractor(
             listsRepository: listsRepository,
             sessionInteractor: session
         )
@@ -48,7 +48,7 @@ public struct ProfileBuilder {
             authButtonBuilder: AuthButtonBuilder.preview(),
             favoriteListsManageBuilder: FavoriteListsManageBuilder(
                 sessionInteractor: session,
-                favoriteListsInteractor: listsInteractor,
+                favoriteListsInteractor: favoriteListsInteractor,
                 router: router
             )
         )

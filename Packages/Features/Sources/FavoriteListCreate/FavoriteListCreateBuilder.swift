@@ -18,7 +18,7 @@ public struct FavoriteListCreateBuilder {
         self.router = router
     }
 
-    public func build() -> FavoriteListCreateCoordinator {
+    public func build() -> some View {
         let viewModel = FavoriteListCreateViewModel(
             favoriteListsInteractor: favoriteListsInteractor,
             sessionInteractor: sessionInteractor,

@@ -23,7 +23,7 @@ public struct MovieListBuilder {
         self.authButtonBuilder = authButtonBuilder
     }
 
-    public func build() -> MovieListScreen {
+    public func build() -> some View {
         let viewModel = MovieListViewModel(
             movieRepository: movieRepository,
             router: router,

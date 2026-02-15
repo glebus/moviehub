@@ -7,26 +7,19 @@ public struct FavoriteListsManageScreen: View {
     @State private var renameName: String = ""
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Lists")
-                    .font(.headline)
-                Spacer()
-                Button("Add") {
-                    viewModel.addTapped()
-                }
-            }
-
+        Group {
             if viewModel.currentUser == nil {
                 Text("Log in to manage lists.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else if viewModel.lists.isEmpty {
-                Text("No lists yet.")
-                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                List {
+                Button("Add list") {
+                    viewModel.addTapped()
+                }
+
+                if viewModel.lists.isEmpty {
+                    Text("No lists yet.")
+                        .foregroundStyle(.secondary)
+                } else {
                     ForEach(viewModel.lists, id: \.id) { list in
                         HStack(spacing: 12) {
                             Circle()
@@ -52,7 +45,6 @@ public struct FavoriteListsManageScreen: View {
                         }
                     }
                 }
-                .listStyle(.plain)
             }
         }
         .onAppear {
