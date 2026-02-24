@@ -1,5 +1,7 @@
 import SwiftUI
-import Domain
+import DomainModels
+import DomainUseCases
+import Data
 import MovieList
 import MovieDetails
 import FavoriteList
@@ -15,14 +17,16 @@ struct RootTabView: View {
 
     var body: some View {
         let authButtonBuilder = AuthButtonBuilder(
-            sessionInteractor: container.sessionInteractor,
+            currentUserUseCase: { container.profileRepository.currentUser },
+            currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
             router: router
         )
         TabView(selection: $router.selectedTab) {
             NavigationStack(path: $router.homePath) {
                 MovieListBuilder(
-                    movieRepository: container.movieRepository,
-                    sessionInteractor: container.sessionInteractor,
+                    searchMoviesUseCase: { query in
+                        try await container.movieRepository.search(query: query)
+                    },
                     router: router,
                     authButtonBuilder: authButtonBuilder
                 ).build()
@@ -39,8 +43,11 @@ struct RootTabView: View {
 
             NavigationStack(path: $router.favoritesPath) {
                 FavoriteListBuilder(
-                    sessionInteractor: container.sessionInteractor,
-                    favoriteListsInteractor: container.favoriteListsInteractor,
+                    currentUserUseCase: { container.profileRepository.currentUser },
+                    currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                    favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
+                    favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
+                    refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
                     router: router,
                     authButtonBuilder: authButtonBuilder
                 ).build()
@@ -57,12 +64,23 @@ struct RootTabView: View {
 
             NavigationStack(path: $router.profilePath) {
                 ProfileBuilder(
-                    sessionInteractor: container.sessionInteractor,
+                    currentUserUseCase: { container.profileRepository.currentUser },
+                    currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                    logoutUseCase: { await container.logoutUseCase.logout() },
                     router: router,
                     authButtonBuilder: authButtonBuilder,
                     favoriteListsManageBuilder: FavoriteListsManageBuilder(
-                        sessionInteractor: container.sessionInteractor,
-                        favoriteListsInteractor: container.favoriteListsInteractor,
+                        currentUserUseCase: { container.profileRepository.currentUser },
+                        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                        favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
+                        favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
+                        refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
+                        renameFavoriteListUseCase: { listId, name in
+                            try await container.renameFavoriteListUseCase.rename(listId: listId, name: name)
+                        },
+                        deleteFavoriteListUseCase: { listId in
+                            try await container.deleteFavoriteListUseCase.delete(listId: listId)
+                        },
                         router: router
                     )
                 ).build()

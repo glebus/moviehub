@@ -1,5 +1,6 @@
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 
 @MainActor
@@ -11,17 +12,17 @@ public final class FavoriteListCreateViewModel {
     public var errorMessage: String?
     public var isSaving: Bool
 
-    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let sessionInteractor: SessionInteractorProtocol
+    private let createFavoriteListUseCase: CreateFavoriteListAction
+    private let currentUserUseCase: CurrentUserReader
     private let router: AppRouterProtocol
 
     init(
-        favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        sessionInteractor: SessionInteractorProtocol,
+        createFavoriteListUseCase: @escaping CreateFavoriteListAction,
+        currentUserUseCase: @escaping CurrentUserReader,
         router: AppRouterProtocol
     ) {
-        self.favoriteListsInteractor = favoriteListsInteractor
-        self.sessionInteractor = sessionInteractor
+        self.createFavoriteListUseCase = createFavoriteListUseCase
+        self.currentUserUseCase = currentUserUseCase
         self.router = router
         self.listName = ""
         self.selectedColor = .coral
@@ -40,7 +41,7 @@ public final class FavoriteListCreateViewModel {
 
     func createList() async {
         guard !listName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        guard sessionInteractor.currentUser != nil else {
+        guard currentUserUseCase() != nil else {
             errorMessage = AuthRequiredError().localizedDescription
             return
         }
@@ -48,9 +49,9 @@ public final class FavoriteListCreateViewModel {
         isSaving = true
         defer { isSaving = false }
         do {
-            _ = try await favoriteListsInteractor.create(
-                name: listName.trimmingCharacters(in: .whitespacesAndNewlines),
-                color: selectedColor
+            _ = try await createFavoriteListUseCase(
+                listName.trimmingCharacters(in: .whitespacesAndNewlines),
+                selectedColor
             )
             router.dismissSheet()
         } catch {

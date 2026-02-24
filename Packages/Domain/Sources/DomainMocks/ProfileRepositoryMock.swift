@@ -1,7 +1,16 @@
-import Domain
+import Combine
+import Observation
+import DomainModels
+import DomainUseCases
+import DomainRepositories
 
-public actor ProfileRepositoryMock: ProfileRepositoryProtocol {
+@MainActor
+@Observable
+public final class ProfileRepositoryMock: ProfileRepositoryProtocol {
     private var users: [String: User] = [:]
+    public private(set) var currentUser: User?
+    private let currentUserSubject = CurrentValueSubject<User?, Never>(nil)
+    public var currentUserSequence: any AsyncSequence<User?, Never> { currentUserSubject.values }
 
     public init() {}
 
@@ -13,5 +22,10 @@ public actor ProfileRepositoryMock: ProfileRepositoryProtocol {
         let user = User(id: UserID(username), username: username)
         users[username] = user
         return user
+    }
+
+    public func setCurrentUser(_ user: User?) {
+        currentUser = user
+        currentUserSubject.send(user)
     }
 }

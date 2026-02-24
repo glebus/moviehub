@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "Data",
     platforms: [
-        .iOS(.v17),
+        .iOS(.v18),
         .macOS(.v15)
     ],
     products: [
@@ -15,7 +15,16 @@ let package = Package(
         .package(path: "../Domain")
     ],
     targets: [
-        .target(name: "Data", dependencies: ["Domain"]),
-        .testTarget(name: "DataTests", dependencies: ["Data", "Domain"])
+        .target(
+            name: "Data",
+            dependencies: [
+                .product(name: "DomainModels", package: "Domain"),
+                .product(name: "DomainRepositories", package: "Domain")
+            ]
+        ),
+        .testTarget(
+            name: "DataTests",
+            dependencies: ["Data", .product(name: "DomainModels", package: "Domain")]
+        )
     ]
 )

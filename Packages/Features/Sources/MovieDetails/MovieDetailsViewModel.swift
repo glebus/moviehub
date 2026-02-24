@@ -1,9 +1,9 @@
 import Foundation
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 import AuthButton
-import Utilities
 
 @MainActor
 @Observable
@@ -22,10 +22,15 @@ public final class MovieDetailsViewModel {
     public var errorMessage: String?
 
     private let movieId: MovieID
-    private let movieRepository: MovieRepositoryProtocol
-    private let sessionInteractor: SessionInteractorProtocol
-    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let favoritesInteractor: FavoritesInteractorProtocol
+    private let movieDetailsUseCase: MovieDetailsAction
+    private let currentUserUseCase: CurrentUserReader
+    private let currentUserSequenceUseCase: CurrentUserSequenceSource
+    private let favoriteListsStateUseCase: FavoriteListsReader
+    private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
+    private let favoriteListByMovieStateUseCase: FavoriteListByMovieReader
+    private let favoriteListByMovieSequenceUseCase: FavoriteListByMovieSequenceSource
+    private let removeFavoriteUseCase: RemoveFavoriteAction
+    private let lookupFavoriteListUseCase: LookupFavoriteListAction
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
@@ -38,18 +43,28 @@ public final class MovieDetailsViewModel {
 
     init(
         movieId: MovieID,
-        movieRepository: MovieRepositoryProtocol,
-        sessionInteractor: SessionInteractorProtocol,
-        favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        favoritesInteractor: FavoritesInteractorProtocol,
+        movieDetailsUseCase: @escaping MovieDetailsAction,
+        currentUserUseCase: @escaping CurrentUserReader,
+        currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
+        favoriteListsStateUseCase: @escaping FavoriteListsReader,
+        favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
+        favoriteListByMovieStateUseCase: @escaping FavoriteListByMovieReader,
+        favoriteListByMovieSequenceUseCase: @escaping FavoriteListByMovieSequenceSource,
+        removeFavoriteUseCase: @escaping RemoveFavoriteAction,
+        lookupFavoriteListUseCase: @escaping LookupFavoriteListAction,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieId = movieId
-        self.movieRepository = movieRepository
-        self.sessionInteractor = sessionInteractor
-        self.favoriteListsInteractor = favoriteListsInteractor
-        self.favoritesInteractor = favoritesInteractor
+        self.movieDetailsUseCase = movieDetailsUseCase
+        self.currentUserUseCase = currentUserUseCase
+        self.currentUserSequenceUseCase = currentUserSequenceUseCase
+        self.favoriteListsStateUseCase = favoriteListsStateUseCase
+        self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
+        self.favoriteListByMovieStateUseCase = favoriteListByMovieStateUseCase
+        self.favoriteListByMovieSequenceUseCase = favoriteListByMovieSequenceUseCase
+        self.removeFavoriteUseCase = removeFavoriteUseCase
+        self.lookupFavoriteListUseCase = lookupFavoriteListUseCase
         self.router = router
         self.authButtonBuilder = authButtonBuilder
         self.state = .idle
@@ -57,8 +72,8 @@ public final class MovieDetailsViewModel {
         self.favoriteButtonEnabled = false
         self.favoriteButtonTitle = "Add to favorites"
         self.errorMessage = nil
-        self.lists = favoriteListsInteractor.lists
-        applySession(sessionInteractor.currentUser)
+        self.lists = favoriteListsStateUseCase()
+        applySession(currentUserUseCase())
         subscribeToSession()
         subscribeToLists()
         subscribeToFavoriteUpdates()
@@ -86,7 +101,7 @@ public final class MovieDetailsViewModel {
         state = .loading
         errorMessage = nil
         do {
-            let details = try await movieRepository.details(id: movieId)
+            let details = try await movieDetailsUseCase(movieId)
             movieDetails = details
             let presentation = MovieDetailsPresentationModel(
                 id: details.id,
@@ -104,22 +119,34 @@ public final class MovieDetailsViewModel {
     }
 
     private func subscribeToSession() {
-        sessionTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
-            self?.applySession(user)
+        sessionTask?.cancel()
+        sessionTask = Task { [weak self, currentUserSequenceUseCase] in
+            for await user in currentUserSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.applySession(user)
+            }
         }
     }
 
     private func subscribeToLists() {
-        listsTask = observeChanges({ [favoriteListsInteractor] in favoriteListsInteractor.lists }) { [weak self] lists in
-            self?.lists = lists
+        listsTask?.cancel()
+        listsTask = Task { [weak self, favoriteListsSequenceUseCase] in
+            for await lists in favoriteListsSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.lists = lists
+            }
         }
     }
 
     private func subscribeToFavoriteUpdates() {
-        favoritesTask = observeChanges({ [favoritesInteractor] in favoritesInteractor.favoriteListByMovie }) { [weak self] map in
-            guard let details = self?.movieDetails else { return }
-            self?.isFavorite = map[details.id] != nil
-            self?.updateFavoriteButtonTitle()
+        favoritesTask?.cancel()
+        favoritesTask = Task { [weak self, favoriteListByMovieSequenceUseCase] in
+            for await map in favoriteListByMovieSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                guard let details = self?.movieDetails else { continue }
+                self?.isFavorite = map[details.id] != nil
+                self?.updateFavoriteButtonTitle()
+            }
         }
     }
 
@@ -131,14 +158,14 @@ public final class MovieDetailsViewModel {
 
     func toggleFavorite() async {
         guard let details = movieDetails else { return }
-        guard let user = currentUser else {
+        guard currentUser != nil else {
             router.present(.auth)
             return
         }
 
         do {
             if isFavorite {
-                try await favoritesInteractor.removeFavorite(movieId: details.id)
+                try await removeFavoriteUseCase(details.id)
                 isFavorite = false
                 updateFavoriteButtonTitle()
                 return
@@ -165,7 +192,7 @@ public final class MovieDetailsViewModel {
             return
         }
         do {
-            let listId = try await favoritesInteractor.favoriteListId(movieId: details.id)
+            let listId = try await lookupFavoriteListUseCase(details.id)
             isFavorite = listId != nil
         } catch {
             isFavorite = false

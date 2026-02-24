@@ -1,10 +1,10 @@
 import Foundation
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 import AuthButton
 import FavoriteListsManage
-import Utilities
 
 @MainActor
 @Observable
@@ -18,26 +18,32 @@ public final class ProfileViewModel {
     public var isAuthSheetPresented: Bool
     public var errorMessage: String?
 
-    private let sessionInteractor: SessionInteractorProtocol
+    private let currentUserUseCase: CurrentUserReader
+    private let currentUserSequenceUseCase: CurrentUserSequenceSource
+    private let logoutUseCase: LogoutAction
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
     public let favoriteListsManageBuilder: FavoriteListsManageBuilder
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
 
     init(
-        sessionInteractor: SessionInteractorProtocol,
+        currentUserUseCase: @escaping CurrentUserReader,
+        currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
+        logoutUseCase: @escaping LogoutAction,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder,
         favoriteListsManageBuilder: FavoriteListsManageBuilder
     ) {
-        self.sessionInteractor = sessionInteractor
+        self.currentUserUseCase = currentUserUseCase
+        self.currentUserSequenceUseCase = currentUserSequenceUseCase
+        self.logoutUseCase = logoutUseCase
         self.router = router
         self.authButtonBuilder = authButtonBuilder
         self.favoriteListsManageBuilder = favoriteListsManageBuilder
         self.state = .loggedOut
         self.isAuthSheetPresented = false
         self.errorMessage = nil
-        applyProfile(sessionInteractor.currentUser)
+        applyProfile(currentUserUseCase())
         subscribeToProfile()
     }
 
@@ -50,13 +56,17 @@ public final class ProfileViewModel {
     }
 
     func logout() async {
-        await sessionInteractor.logout()
-        applyProfile(sessionInteractor.currentUser)
+        await logoutUseCase()
+        applyProfile(currentUserUseCase())
     }
 
     private func subscribeToProfile() {
-        profileTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
-            self?.applyProfile(user)
+        profileTask?.cancel()
+        profileTask = Task { [weak self, currentUserSequenceUseCase] in
+            for await user in currentUserSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.applyProfile(user)
+            }
         }
     }
 

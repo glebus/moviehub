@@ -1,9 +1,9 @@
 import Foundation
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 import AuthButton
-import Utilities
 
 @MainActor
 @Observable
@@ -24,8 +24,11 @@ public final class FavoriteListViewModel {
     public var lists: [FavoriteList] = []
     public var currentUser: User?
 
-    private let sessionInteractor: SessionInteractorProtocol
-    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
+    private let currentUserUseCase: CurrentUserReader
+    private let currentUserSequenceUseCase: CurrentUserSequenceSource
+    private let favoriteListsStateUseCase: FavoriteListsReader
+    private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
+    private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
@@ -33,17 +36,23 @@ public final class FavoriteListViewModel {
     @ObservationIgnored private var listsTask: Task<Void, Never>?
 
     init(
-        sessionInteractor: SessionInteractorProtocol,
-        favoriteListsInteractor: FavoriteListsInteractorProtocol,
+        currentUserUseCase: @escaping CurrentUserReader,
+        currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
+        favoriteListsStateUseCase: @escaping FavoriteListsReader,
+        favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
+        refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
-        self.sessionInteractor = sessionInteractor
-        self.favoriteListsInteractor = favoriteListsInteractor
+        self.currentUserUseCase = currentUserUseCase
+        self.currentUserSequenceUseCase = currentUserSequenceUseCase
+        self.favoriteListsStateUseCase = favoriteListsStateUseCase
+        self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
+        self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
         self.router = router
         self.authButtonBuilder = authButtonBuilder
-        self.lists = favoriteListsInteractor.lists
-        self.currentUser = sessionInteractor.currentUser
+        self.lists = favoriteListsStateUseCase()
+        self.currentUser = currentUserUseCase()
     }
 
     deinit {
@@ -63,20 +72,26 @@ public final class FavoriteListViewModel {
 
     private func subscribeToSession() {
         profileTask?.cancel()
-        profileTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
-            self?.currentUser = user
+        profileTask = Task { [weak self, currentUserSequenceUseCase] in
+            for await user in currentUserSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.currentUser = user
+            }
         }
     }
 
     private func subscribeToLists() {
         listsTask?.cancel()
-        listsTask = observeChanges({ [favoriteListsInteractor] in favoriteListsInteractor.lists }) { [weak self] lists in
-            self?.lists = lists
+        listsTask = Task { [weak self, favoriteListsSequenceUseCase] in
+            for await lists in favoriteListsSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.lists = lists
+            }
         }
     }
 
     private func refreshListsIfNeeded() async {
         guard currentUser != nil else { return }
-        try? await favoriteListsInteractor.refresh()
+        try? await refreshFavoriteListsUseCase()
     }
 }

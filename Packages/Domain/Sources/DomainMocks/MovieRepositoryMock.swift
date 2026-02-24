@@ -1,4 +1,6 @@
-import Domain
+import DomainModels
+import DomainUseCases
+import DomainRepositories
 
 public struct MovieRepositoryMock: MovieRepositoryProtocol {
     public var searchResults: [Movie]

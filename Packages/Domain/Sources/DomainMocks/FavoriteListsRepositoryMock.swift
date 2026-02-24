@@ -1,13 +1,25 @@
 import Foundation
-import Domain
+import Combine
+import Observation
+import DomainModels
+import DomainUseCases
+import DomainRepositories
 
-public actor FavoriteListsRepositoryMock: FavoriteListsRepositoryProtocol {
-    private var lists: [UserID: [FavoriteList]] = [:]
+@MainActor
+@Observable
+public final class FavoriteListsRepositoryMock: FavoriteListsRepositoryProtocol {
+    private var storageByUser: [UserID: [FavoriteList]] = [:]
+    public private(set) var lists: [FavoriteList] = []
+    private let listsSubject = CurrentValueSubject<[FavoriteList], Never>([])
+    public var listsSequence: any AsyncSequence<[FavoriteList], Never> { listsSubject.values }
 
     public init() {}
 
     public func fetchLists(userId: UserID) async throws -> [FavoriteList] {
-        lists[userId] ?? []
+        let fetched = storageByUser[userId] ?? []
+        lists = fetched
+        listsSubject.send(fetched)
+        return fetched
     }
 
     public func createList(userId: UserID, name: String, color: FavoriteListColor) async throws -> FavoriteList {
@@ -17,14 +29,16 @@ public actor FavoriteListsRepositoryMock: FavoriteListsRepositoryProtocol {
             color: color,
             createdAt: Date()
         )
-        var userLists = lists[userId] ?? []
+        var userLists = storageByUser[userId] ?? []
         userLists.append(created)
-        lists[userId] = userLists
+        storageByUser[userId] = userLists
+        lists = userLists
+        listsSubject.send(userLists)
         return created
     }
 
     public func renameList(userId: UserID, listId: FavoriteListID, name: String) async throws {
-        var userLists = lists[userId] ?? []
+        var userLists = storageByUser[userId] ?? []
         if let index = userLists.firstIndex(where: { $0.id == listId }) {
             let current = userLists[index]
             userLists[index] = FavoriteList(
@@ -33,17 +47,26 @@ public actor FavoriteListsRepositoryMock: FavoriteListsRepositoryProtocol {
                 color: current.color,
                 createdAt: current.createdAt
             )
-            lists[userId] = userLists
+            storageByUser[userId] = userLists
+            lists = userLists
+            listsSubject.send(userLists)
         }
     }
 
     public func deleteList(userId: UserID, listId: FavoriteListID) async throws {
-        var userLists = lists[userId] ?? []
+        var userLists = storageByUser[userId] ?? []
         userLists.removeAll { $0.id == listId }
-        lists[userId] = userLists
+        storageByUser[userId] = userLists
+        lists = userLists
+        listsSubject.send(userLists)
+    }
+
+    public func clearLists() {
+        lists = []
+        listsSubject.send([])
     }
 
     public func seedLists(_ seed: [FavoriteList], for userId: UserID) {
-        lists[userId] = seed
+        storageByUser[userId] = seed
     }
 }

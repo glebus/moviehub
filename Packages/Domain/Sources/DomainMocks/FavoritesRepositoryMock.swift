@@ -1,22 +1,54 @@
-import Domain
+import Combine
+import Observation
+import DomainModels
+import DomainUseCases
+import DomainRepositories
 
-public actor FavoritesRepositoryMock: FavoritesRepositoryProtocol {
-    private var favorites: [UserID: [FavoriteListID: [Movie]]] = [:]
-    private var favoriteListByMovie: [UserID: [MovieID: FavoriteListID]] = [:]
+@MainActor
+@Observable
+public final class FavoritesRepositoryMock: FavoritesRepositoryProtocol {
+    private var storedFavorites: [UserID: [FavoriteListID: [Movie]]] = [:]
+    private var storedFavoriteListByMovie: [UserID: [MovieID: FavoriteListID]] = [:]
+    public private(set) var favoritesByList: [FavoriteListID: [Movie]] = [:]
+    private let favoritesByListSubject = CurrentValueSubject<[FavoriteListID: [Movie]], Never>([:])
+    public var favoritesByListSequence: any AsyncSequence<[FavoriteListID: [Movie]], Never> {
+        favoritesByListSubject.values
+    }
+    public private(set) var favoriteListByMovie: [MovieID: FavoriteListID] = [:]
+    private let favoriteListByMovieSubject = CurrentValueSubject<[MovieID: FavoriteListID], Never>([:])
+    public var favoriteListByMovieSequence: any AsyncSequence<[MovieID: FavoriteListID], Never> {
+        favoriteListByMovieSubject.values
+    }
 
     public init() {}
 
     public func fetchFavorites(userId: UserID, listId: FavoriteListID) async throws -> [Movie] {
-        favorites[userId]?[listId] ?? []
+        let movies = storedFavorites[userId]?[listId] ?? []
+        favoritesByList[listId] = movies
+        favoriteListByMovie = favoriteListByMovie.filter { $0.value != listId }
+        for movie in movies {
+            favoriteListByMovie[movie.id] = listId
+        }
+        favoritesByListSubject.send(favoritesByList)
+        favoriteListByMovieSubject.send(favoriteListByMovie)
+        return movies
     }
 
     public func favoriteListId(userId: UserID, movieId: MovieID) async throws -> FavoriteListID? {
-        favoriteListByMovie[userId]?[movieId]
+        if let cached = favoriteListByMovie[movieId] {
+            return cached
+        }
+        let listId = storedFavoriteListByMovie[userId]?[movieId]
+        if let listId {
+            favoriteListByMovie[movieId] = listId
+            favoriteListByMovieSubject.send(favoriteListByMovie)
+        }
+        return listId
     }
 
     public func addFavorite(userId: UserID, movie: MovieDetails, listId: FavoriteListID) async throws {
-        var list = favorites[userId] ?? [:]
-        let existingListId = favoriteListByMovie[userId]?[movie.id]
+        var list = storedFavorites[userId] ?? [:]
+        let existingListId = storedFavoriteListByMovie[userId]?[movie.id]
         if let existingListId, existingListId != listId {
             list[existingListId]?.removeAll { $0.id == movie.id }
         }
@@ -27,29 +59,55 @@ public actor FavoritesRepositoryMock: FavoritesRepositoryProtocol {
             movies.append(item)
         }
         list[listId] = movies
-        favorites[userId] = list
-        var movieMap = favoriteListByMovie[userId] ?? [:]
+        storedFavorites[userId] = list
+        var movieMap = storedFavoriteListByMovie[userId] ?? [:]
         movieMap[movie.id] = listId
-        favoriteListByMovie[userId] = movieMap
+        storedFavoriteListByMovie[userId] = movieMap
+
+        if let existingListId, existingListId != listId {
+            favoritesByList[existingListId]?.removeAll { $0.id == movie.id }
+        }
+        var cachedMovies = favoritesByList[listId] ?? []
+        if !cachedMovies.contains(where: { $0.id == movie.id }) {
+            cachedMovies.append(Movie(id: movie.id, title: movie.title, year: nil, posterURL: movie.posterURL))
+        }
+        favoritesByList[listId] = cachedMovies
+        favoriteListByMovie[movie.id] = listId
+        favoritesByListSubject.send(favoritesByList)
+        favoriteListByMovieSubject.send(favoriteListByMovie)
     }
 
     public func removeFavorite(userId: UserID, movieId: MovieID) async throws {
-        var list = favorites[userId] ?? [:]
+        var list = storedFavorites[userId] ?? [:]
         for key in list.keys {
             list[key]?.removeAll { $0.id == movieId }
         }
-        favorites[userId] = list
-        favoriteListByMovie[userId]?[movieId] = nil
+        storedFavorites[userId] = list
+        storedFavoriteListByMovie[userId]?[movieId] = nil
+
+        if let listId = favoriteListByMovie[movieId] {
+            favoritesByList[listId]?.removeAll { $0.id == movieId }
+        }
+        favoriteListByMovie[movieId] = nil
+        favoritesByListSubject.send(favoritesByList)
+        favoriteListByMovieSubject.send(favoriteListByMovie)
+    }
+
+    public func clearCaches() {
+        favoritesByList = [:]
+        favoriteListByMovie = [:]
+        favoritesByListSubject.send([:])
+        favoriteListByMovieSubject.send([:])
     }
 
     public func seedFavorites(_ movies: [Movie], for userId: UserID, listId: FavoriteListID) {
-        var list = favorites[userId] ?? [:]
+        var list = storedFavorites[userId] ?? [:]
         list[listId] = movies
-        favorites[userId] = list
-        var movieMap = favoriteListByMovie[userId] ?? [:]
+        storedFavorites[userId] = list
+        var movieMap = storedFavoriteListByMovie[userId] ?? [:]
         for movie in movies {
             movieMap[movie.id] = listId
         }
-        favoriteListByMovie[userId] = movieMap
+        storedFavoriteListByMovie[userId] = movieMap
     }
 }

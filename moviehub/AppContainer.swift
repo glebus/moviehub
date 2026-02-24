@@ -1,13 +1,24 @@
 import Foundation
-import Domain
+import DomainModels
+import DomainUseCases
 import Data
 
 final class AppContainer {
     let movieRepository: MovieRepository
     let swiftDataStorage: SwiftDataStorage
-    let sessionInteractor: SessionInteractor
-    let favoriteListsInteractor: FavoriteListsInteractor
-    let favoritesInteractor: FavoritesInteractor
+    let profileRepository: SessionRepository
+    let favoriteListsRepository: FavoriteListsRepository
+    let favoritesRepository: FavoritesRepository
+    let loginUseCase: LoginUseCase
+    let logoutUseCase: LogoutUseCase
+    let refreshFavoriteListsUseCase: RefreshFavoriteListsUseCase
+    let createFavoriteListUseCase: CreateFavoriteListUseCase
+    let renameFavoriteListUseCase: RenameFavoriteListUseCase
+    let deleteFavoriteListUseCase: DeleteFavoriteListUseCase
+    let refreshFavoritesUseCase: RefreshFavoritesUseCase
+    let addFavoriteUseCase: AddFavoriteUseCase
+    let removeFavoriteUseCase: RemoveFavoriteUseCase
+    let lookupFavoriteListUseCase: LookupFavoriteListUseCase
 
     init() {
         let httpClient = URLSessionHTTPClient()
@@ -18,15 +29,51 @@ final class AppContainer {
 
         let stack = SwiftDataStack(inMemory: false)
         self.swiftDataStorage = SwiftDataStorage(container: stack.container)
+        self.profileRepository = SessionRepository(storage: swiftDataStorage)
+        self.favoriteListsRepository = FavoriteListsRepository(storage: swiftDataStorage)
+        self.favoritesRepository = FavoritesRepository(storage: swiftDataStorage)
 
-        self.sessionInteractor = SessionInteractor(profileRepository: swiftDataStorage)
-        self.favoriteListsInteractor = FavoriteListsInteractor(
-            listsRepository: swiftDataStorage,
-            sessionInteractor: sessionInteractor
+        self.loginUseCase = LoginUseCase(
+            profileRepository: profileRepository,
+            favoriteListsRepository: favoriteListsRepository,
+            favoritesRepository: favoritesRepository
         )
-        self.favoritesInteractor = FavoritesInteractor(
-            favoritesRepository: swiftDataStorage,
-            sessionInteractor: sessionInteractor
+        self.logoutUseCase = LogoutUseCase(
+            profileRepository: profileRepository,
+            favoriteListsRepository: favoriteListsRepository,
+            favoritesRepository: favoritesRepository
+        )
+        self.refreshFavoriteListsUseCase = RefreshFavoriteListsUseCase(
+            listsRepository: favoriteListsRepository,
+            profileRepository: profileRepository
+        )
+        self.createFavoriteListUseCase = CreateFavoriteListUseCase(
+            listsRepository: favoriteListsRepository,
+            profileRepository: profileRepository
+        )
+        self.renameFavoriteListUseCase = RenameFavoriteListUseCase(
+            listsRepository: favoriteListsRepository,
+            profileRepository: profileRepository
+        )
+        self.deleteFavoriteListUseCase = DeleteFavoriteListUseCase(
+            listsRepository: favoriteListsRepository,
+            profileRepository: profileRepository
+        )
+        self.refreshFavoritesUseCase = RefreshFavoritesUseCase(
+            favoritesRepository: favoritesRepository,
+            profileRepository: profileRepository
+        )
+        self.addFavoriteUseCase = AddFavoriteUseCase(
+            favoritesRepository: favoritesRepository,
+            profileRepository: profileRepository
+        )
+        self.removeFavoriteUseCase = RemoveFavoriteUseCase(
+            favoritesRepository: favoritesRepository,
+            profileRepository: profileRepository
+        )
+        self.lookupFavoriteListUseCase = LookupFavoriteListUseCase(
+            favoritesRepository: favoritesRepository,
+            profileRepository: profileRepository
         )
     }
 }

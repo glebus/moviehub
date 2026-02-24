@@ -1,30 +1,46 @@
 import SwiftUI
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 import AuthButton
 import DomainMocks
 
 @MainActor
 public struct MovieDetailsBuilder {
-    private let movieRepository: MovieRepositoryProtocol
-    private let sessionInteractor: SessionInteractorProtocol
-    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let favoritesInteractor: FavoritesInteractorProtocol
+    private let movieDetailsUseCase: MovieDetailsAction
+    private let currentUserUseCase: CurrentUserReader
+    private let currentUserSequenceUseCase: CurrentUserSequenceSource
+    private let favoriteListsStateUseCase: FavoriteListsReader
+    private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
+    private let favoriteListByMovieStateUseCase: FavoriteListByMovieReader
+    private let favoriteListByMovieSequenceUseCase: FavoriteListByMovieSequenceSource
+    private let removeFavoriteUseCase: RemoveFavoriteAction
+    private let lookupFavoriteListUseCase: LookupFavoriteListAction
     private let router: AppRouterProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
-        movieRepository: MovieRepositoryProtocol,
-        sessionInteractor: SessionInteractorProtocol,
-        favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        favoritesInteractor: FavoritesInteractorProtocol,
+        movieDetailsUseCase: @escaping MovieDetailsAction,
+        currentUserUseCase: @escaping CurrentUserReader,
+        currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
+        favoriteListsStateUseCase: @escaping FavoriteListsReader,
+        favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
+        favoriteListByMovieStateUseCase: @escaping FavoriteListByMovieReader,
+        favoriteListByMovieSequenceUseCase: @escaping FavoriteListByMovieSequenceSource,
+        removeFavoriteUseCase: @escaping RemoveFavoriteAction,
+        lookupFavoriteListUseCase: @escaping LookupFavoriteListAction,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
-        self.movieRepository = movieRepository
-        self.sessionInteractor = sessionInteractor
-        self.favoriteListsInteractor = favoriteListsInteractor
-        self.favoritesInteractor = favoritesInteractor
+        self.movieDetailsUseCase = movieDetailsUseCase
+        self.currentUserUseCase = currentUserUseCase
+        self.currentUserSequenceUseCase = currentUserSequenceUseCase
+        self.favoriteListsStateUseCase = favoriteListsStateUseCase
+        self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
+        self.favoriteListByMovieStateUseCase = favoriteListByMovieStateUseCase
+        self.favoriteListByMovieSequenceUseCase = favoriteListByMovieSequenceUseCase
+        self.removeFavoriteUseCase = removeFavoriteUseCase
+        self.lookupFavoriteListUseCase = lookupFavoriteListUseCase
         self.router = router
         self.authButtonBuilder = authButtonBuilder
     }
@@ -32,10 +48,15 @@ public struct MovieDetailsBuilder {
     public func build(movieId: MovieID) -> MovieDetailsScreen {
         let viewModel = MovieDetailsViewModel(
             movieId: movieId,
-            movieRepository: movieRepository,
-            sessionInteractor: sessionInteractor,
-            favoriteListsInteractor: favoriteListsInteractor,
-            favoritesInteractor: favoritesInteractor,
+            movieDetailsUseCase: movieDetailsUseCase,
+            currentUserUseCase: currentUserUseCase,
+            currentUserSequenceUseCase: currentUserSequenceUseCase,
+            favoriteListsStateUseCase: favoriteListsStateUseCase,
+            favoriteListsSequenceUseCase: favoriteListsSequenceUseCase,
+            favoriteListByMovieStateUseCase: favoriteListByMovieStateUseCase,
+            favoriteListByMovieSequenceUseCase: favoriteListByMovieSequenceUseCase,
+            removeFavoriteUseCase: removeFavoriteUseCase,
+            lookupFavoriteListUseCase: lookupFavoriteListUseCase,
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -44,17 +65,11 @@ public struct MovieDetailsBuilder {
 
     public static func preview(movieId: MovieID = MovieID("m1")) -> MovieDetailsBuilder {
         let router = AppRouterMock()
-        let session = SessionInteractorMock(currentUser: User(id: UserID("user"), username: "user"))
-        let listsRepository = FavoriteListsRepositoryMock()
-        let favoritesRepository = FavoritesRepositoryMock()
-        let favoriteListsInteractor = FavoriteListsInteractor(
-            listsRepository: listsRepository,
-            sessionInteractor: session
-        )
-        let favoritesInteractor = FavoritesInteractor(
-            favoritesRepository: favoritesRepository,
-            sessionInteractor: session
-        )
+        let session = SessionUseCaseMock(currentUser: User(id: UserID("user"), username: "user"))
+        let favoriteListsUseCases = FavoriteListsUseCaseMock(lists: [
+            FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date())
+        ])
+        let favoritesUseCases = FavoritesUseCaseMock()
         let movieRepo = MovieRepositoryMock(
             detailsResult: MovieDetails(
                 id: movieId,
@@ -65,18 +80,17 @@ public struct MovieDetailsBuilder {
                 imdbURL: nil
             )
         )
-        Task {
-            await listsRepository.seedLists([
-                FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date())
-            ], for: UserID("user"))
-            try? await favoriteListsInteractor.refresh()
-        }
 
         return MovieDetailsBuilder(
-            movieRepository: movieRepo,
-            sessionInteractor: session,
-            favoriteListsInteractor: favoriteListsInteractor,
-            favoritesInteractor: favoritesInteractor,
+            movieDetailsUseCase: { id in try await movieRepo.details(id: id) },
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            favoriteListsStateUseCase: { favoriteListsUseCases.lists },
+            favoriteListsSequenceUseCase: { favoriteListsUseCases.listsSequence },
+            favoriteListByMovieStateUseCase: { favoritesUseCases.favoriteListByMovie },
+            favoriteListByMovieSequenceUseCase: { favoritesUseCases.favoriteListByMovieSequence },
+            removeFavoriteUseCase: { try await favoritesUseCases.removeFavorite(movieId: $0) },
+            lookupFavoriteListUseCase: { try await favoritesUseCases.favoriteListId(movieId: $0) },
             router: router,
             authButtonBuilder: AuthButtonBuilder.preview()
         )

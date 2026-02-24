@@ -5,19 +5,26 @@ import PackageDescription
 let package = Package(
     name: "Domain",
     platforms: [
-        .iOS(.v17),
+        .iOS(.v18),
         .macOS(.v15)
     ],
     products: [
-        .library(name: "Domain", targets: ["Domain"]),
+        .library(name: "DomainModels", targets: ["DomainModels"]),
+        .library(name: "DomainUseCases", targets: ["DomainUseCases"]),
+        .library(name: "DomainRepositories", targets: ["DomainRepositories"]),
         .library(name: "DomainMocks", targets: ["DomainMocks"])
     ],
-    dependencies: [
-        .package(path: "../Utilities")
-    ],
     targets: [
-        .target(name: "Domain", dependencies: ["Utilities"]),
-        .target(name: "DomainMocks", dependencies: ["Domain"]),
-        .testTarget(name: "DomainTests", dependencies: ["Domain", "DomainMocks"])
+        .target(name: "DomainModels"),
+        .target(name: "DomainRepositories", dependencies: ["DomainModels"]),
+        .target(name: "DomainUseCases", dependencies: ["DomainModels", "DomainRepositories"]),
+        .target(
+            name: "DomainMocks",
+            dependencies: ["DomainModels", "DomainUseCases", "DomainRepositories"]
+        ),
+        .testTarget(
+            name: "DomainTests",
+            dependencies: ["DomainModels", "DomainUseCases", "DomainRepositories", "DomainMocks"]
+        )
     ]
 )

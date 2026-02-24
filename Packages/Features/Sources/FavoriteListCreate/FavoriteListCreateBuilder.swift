@@ -1,27 +1,28 @@
 import SwiftUI
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 
 @MainActor
 public struct FavoriteListCreateBuilder {
-    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let sessionInteractor: SessionInteractorProtocol
+    private let createFavoriteListUseCase: CreateFavoriteListAction
+    private let currentUserUseCase: CurrentUserReader
     private let router: AppRouterProtocol
 
     public init(
-        favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        sessionInteractor: SessionInteractorProtocol,
+        createFavoriteListUseCase: @escaping CreateFavoriteListAction,
+        currentUserUseCase: @escaping CurrentUserReader,
         router: AppRouterProtocol
     ) {
-        self.favoriteListsInteractor = favoriteListsInteractor
-        self.sessionInteractor = sessionInteractor
+        self.createFavoriteListUseCase = createFavoriteListUseCase
+        self.currentUserUseCase = currentUserUseCase
         self.router = router
     }
 
     public func build() -> some View {
         let viewModel = FavoriteListCreateViewModel(
-            favoriteListsInteractor: favoriteListsInteractor,
-            sessionInteractor: sessionInteractor,
+            createFavoriteListUseCase: createFavoriteListUseCase,
+            currentUserUseCase: currentUserUseCase,
             router: router
         )
         return FavoriteListCreateCoordinator(viewModel: viewModel)

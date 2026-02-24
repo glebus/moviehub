@@ -1,5 +1,6 @@
 import Testing
-import Domain
+import DomainModels
+import DomainUseCases
 import DomainMocks
 import Router
 import AuthButton
@@ -10,15 +11,19 @@ struct MovieListViewModelTests {
     @Test
     func submitSearchLoadsMovies() async {
         let router = AppRouterMock()
-        let session = SessionInteractorMock()
-        let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
+        let session = SessionUseCaseMock()
+        let authButtonBuilder = AuthButtonBuilder(
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            router: router
+        )
         let repo = MovieRepositoryMock(
             searchResults: [
                 Movie(id: MovieID("1"), title: "Test", year: "2020", posterURL: nil)
             ]
         )
         let viewModel = MovieListViewModel(
-            movieRepository: repo,
+            searchMoviesUseCase: { query in try await repo.search(query: query) },
             router: router,
             authButtonBuilder: authButtonBuilder
         )

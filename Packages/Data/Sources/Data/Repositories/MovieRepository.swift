@@ -1,5 +1,6 @@
 import Foundation
-import Domain
+import DomainModels
+import DomainRepositories
 
 public struct MovieRepository: MovieRepositoryProtocol {
     private let httpClient: HTTPClient

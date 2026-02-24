@@ -1,5 +1,6 @@
 import Testing
-import Domain
+import DomainModels
+import DomainUseCases
 import DomainMocks
 import Router
 @testable import AuthButton
@@ -10,8 +11,12 @@ struct AuthButtonViewModelTests {
     func titleUpdatesFromSession() async {
         let router = AppRouterMock()
         let user = User(id: UserID("u1"), username: "alex")
-        let session = SessionInteractorMock(currentUser: user)
-        let viewModel = AuthButtonViewModel(sessionInteractor: session, router: router)
+        let session = SessionUseCaseMock(currentUser: user)
+        let viewModel = AuthButtonViewModel(
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            router: router
+        )
 
         #expect(viewModel.title == "alex")
     }
@@ -19,8 +24,12 @@ struct AuthButtonViewModelTests {
     @Test
     func tappingWhenLoggedOutPresentsAuth() async {
         let router = AppRouterMock()
-        let session = SessionInteractorMock(currentUser: nil)
-        let viewModel = AuthButtonViewModel(sessionInteractor: session, router: router)
+        let session = SessionUseCaseMock(currentUser: nil)
+        let viewModel = AuthButtonViewModel(
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            router: router
+        )
 
         viewModel.tapped()
 
@@ -31,8 +40,12 @@ struct AuthButtonViewModelTests {
     func tappingWhenLoggedInSelectsProfileTab() async {
         let router = AppRouterMock()
         let user = User(id: UserID("u1"), username: "alex")
-        let session = SessionInteractorMock(currentUser: user)
-        let viewModel = AuthButtonViewModel(sessionInteractor: session, router: router)
+        let session = SessionUseCaseMock(currentUser: user)
+        let viewModel = AuthButtonViewModel(
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            router: router
+        )
 
         viewModel.tapped()
 

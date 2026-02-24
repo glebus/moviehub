@@ -8,8 +8,8 @@ struct AuthViewModelTests {
     @Test
     func loginWithEmptyUsernameShowsError() async {
         let router = AppRouterMock()
-        let session = SessionInteractorMock()
-        let viewModel = AuthViewModel(sessionInteractor: session, router: router)
+        let session = SessionUseCaseMock()
+        let viewModel = AuthViewModel(loginUseCase: { try await session.login(username: $0) }, router: router)
 
         viewModel.username = " "
         await viewModel.login()
@@ -24,8 +24,8 @@ struct AuthViewModelTests {
     @Test
     func loginSuccessDismissesSheet() async {
         let router = AppRouterMock()
-        let session = SessionInteractorMock()
-        let viewModel = AuthViewModel(sessionInteractor: session, router: router)
+        let session = SessionUseCaseMock()
+        let viewModel = AuthViewModel(loginUseCase: { try await session.login(username: $0) }, router: router)
 
         viewModel.username = "Alex"
         await viewModel.login()

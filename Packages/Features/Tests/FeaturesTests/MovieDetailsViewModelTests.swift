@@ -1,5 +1,6 @@
 import Testing
-import Domain
+import DomainModels
+import DomainUseCases
 import DomainMocks
 import Router
 import AuthButton
@@ -10,18 +11,14 @@ struct MovieDetailsViewModelTests {
     @Test
     func onAppearLoadsDetails() async {
         let router = AppRouterMock()
-        let session = SessionInteractorMock()
-        let listsRepository = FavoriteListsRepositoryMock()
-        let favoritesRepository = FavoritesRepositoryMock()
-        let favoriteListsInteractor = FavoriteListsInteractor(
-            listsRepository: listsRepository,
-            sessionInteractor: session
+        let session = SessionUseCaseMock()
+        let favoriteListsUseCases = FavoriteListsUseCaseMock()
+        let favoritesUseCases = FavoritesUseCaseMock()
+        let authButtonBuilder = AuthButtonBuilder(
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            router: router
         )
-        let favoritesInteractor = FavoritesInteractor(
-            favoritesRepository: favoritesRepository,
-            sessionInteractor: session
-        )
-        let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let repo = MovieRepositoryMock(
             detailsResult: MovieDetails(
                 id: MovieID("10"),
@@ -34,10 +31,15 @@ struct MovieDetailsViewModelTests {
         )
         let viewModel = MovieDetailsViewModel(
             movieId: MovieID("10"),
-            movieRepository: repo,
-            sessionInteractor: session,
-            favoriteListsInteractor: favoriteListsInteractor,
-            favoritesInteractor: favoritesInteractor,
+            movieDetailsUseCase: { id in try await repo.details(id: id) },
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            favoriteListsStateUseCase: { favoriteListsUseCases.lists },
+            favoriteListsSequenceUseCase: { favoriteListsUseCases.listsSequence },
+            favoriteListByMovieStateUseCase: { favoritesUseCases.favoriteListByMovie },
+            favoriteListByMovieSequenceUseCase: { favoritesUseCases.favoriteListByMovieSequence },
+            removeFavoriteUseCase: { try await favoritesUseCases.removeFavorite(movieId: $0) },
+            lookupFavoriteListUseCase: { try await favoritesUseCases.favoriteListId(movieId: $0) },
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -54,18 +56,14 @@ struct MovieDetailsViewModelTests {
     @Test
     func favoriteWithoutAuthPresentsAuthSheet() async {
         let router = AppRouterMock()
-        let session = SessionInteractorMock(currentUser: nil)
-        let listsRepository = FavoriteListsRepositoryMock()
-        let favoritesRepository = FavoritesRepositoryMock()
-        let favoriteListsInteractor = FavoriteListsInteractor(
-            listsRepository: listsRepository,
-            sessionInteractor: session
+        let session = SessionUseCaseMock(currentUser: nil)
+        let favoriteListsUseCases = FavoriteListsUseCaseMock()
+        let favoritesUseCases = FavoritesUseCaseMock()
+        let authButtonBuilder = AuthButtonBuilder(
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            router: router
         )
-        let favoritesInteractor = FavoritesInteractor(
-            favoritesRepository: favoritesRepository,
-            sessionInteractor: session
-        )
-        let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let repo = MovieRepositoryMock(
             detailsResult: MovieDetails(
                 id: MovieID("10"),
@@ -78,10 +76,15 @@ struct MovieDetailsViewModelTests {
         )
         let viewModel = MovieDetailsViewModel(
             movieId: MovieID("10"),
-            movieRepository: repo,
-            sessionInteractor: session,
-            favoriteListsInteractor: favoriteListsInteractor,
-            favoritesInteractor: favoritesInteractor,
+            movieDetailsUseCase: { id in try await repo.details(id: id) },
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            favoriteListsStateUseCase: { favoriteListsUseCases.lists },
+            favoriteListsSequenceUseCase: { favoriteListsUseCases.listsSequence },
+            favoriteListByMovieStateUseCase: { favoritesUseCases.favoriteListByMovie },
+            favoriteListByMovieSequenceUseCase: { favoritesUseCases.favoriteListByMovieSequence },
+            removeFavoriteUseCase: { try await favoritesUseCases.removeFavorite(movieId: $0) },
+            lookupFavoriteListUseCase: { try await favoritesUseCases.favoriteListId(movieId: $0) },
             router: router,
             authButtonBuilder: authButtonBuilder
         )

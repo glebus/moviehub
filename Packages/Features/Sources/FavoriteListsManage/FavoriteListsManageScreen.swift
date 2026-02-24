@@ -1,5 +1,6 @@
 import SwiftUI
-import Domain
+import DomainModels
+import DomainUseCases
 
 public struct FavoriteListsManageScreen: View {
     @State var viewModel: FavoriteListsManageViewModel

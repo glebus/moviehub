@@ -1,8 +1,8 @@
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 import AuthButton
-import Utilities
 
 @MainActor
 @Observable
@@ -12,9 +12,12 @@ public final class FavoriteListPickerViewModel {
     public var errorMessage: String?
 
     private let movieDetails: MovieDetails
-    private let sessionInteractor: SessionInteractorProtocol
-    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
-    private let favoritesInteractor: FavoritesInteractorProtocol
+    private let currentUserUseCase: CurrentUserReader
+    private let currentUserSequenceUseCase: CurrentUserSequenceSource
+    private let favoriteListsStateUseCase: FavoriteListsReader
+    private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
+    private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
+    private let addFavoriteUseCase: AddFavoriteAction
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
@@ -23,20 +26,26 @@ public final class FavoriteListPickerViewModel {
 
     init(
         movieDetails: MovieDetails,
-        sessionInteractor: SessionInteractorProtocol,
-        favoriteListsInteractor: FavoriteListsInteractorProtocol,
-        favoritesInteractor: FavoritesInteractorProtocol,
+        currentUserUseCase: @escaping CurrentUserReader,
+        currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
+        favoriteListsStateUseCase: @escaping FavoriteListsReader,
+        favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
+        refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
+        addFavoriteUseCase: @escaping AddFavoriteAction,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieDetails = movieDetails
-        self.sessionInteractor = sessionInteractor
-        self.favoriteListsInteractor = favoriteListsInteractor
-        self.favoritesInteractor = favoritesInteractor
+        self.currentUserUseCase = currentUserUseCase
+        self.currentUserSequenceUseCase = currentUserSequenceUseCase
+        self.favoriteListsStateUseCase = favoriteListsStateUseCase
+        self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
+        self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
+        self.addFavoriteUseCase = addFavoriteUseCase
         self.router = router
         self.authButtonBuilder = authButtonBuilder
-        self.lists = favoriteListsInteractor.lists
-        self.currentUser = sessionInteractor.currentUser
+        self.lists = favoriteListsStateUseCase()
+        self.currentUser = currentUserUseCase()
         self.errorMessage = nil
     }
 
@@ -57,21 +66,27 @@ public final class FavoriteListPickerViewModel {
 
     private func subscribeToSession() {
         sessionTask?.cancel()
-        sessionTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
-            self?.currentUser = user
+        sessionTask = Task { [weak self, currentUserSequenceUseCase] in
+            for await user in currentUserSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.currentUser = user
+            }
         }
     }
 
     private func subscribeToLists() {
         listsTask?.cancel()
-        listsTask = observeChanges({ [favoriteListsInteractor] in favoriteListsInteractor.lists }) { [weak self] lists in
-            self?.lists = lists
+        listsTask = Task { [weak self, favoriteListsSequenceUseCase] in
+            for await lists in favoriteListsSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.lists = lists
+            }
         }
     }
 
     private func refreshListsIfNeeded() async {
         guard currentUser != nil else { return }
-        try? await favoriteListsInteractor.refresh()
+        try? await refreshFavoriteListsUseCase()
     }
 
     private func addToList(listId: FavoriteListID) async {
@@ -81,7 +96,7 @@ public final class FavoriteListPickerViewModel {
         }
 
         do {
-            try await favoritesInteractor.addFavorite(movie: movieDetails, listId: listId)
+            try await addFavoriteUseCase(movieDetails, listId)
             router.dismissSheet()
         } catch {
             errorMessage = error.localizedDescription

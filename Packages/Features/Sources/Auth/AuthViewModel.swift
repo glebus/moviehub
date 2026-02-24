@@ -1,6 +1,7 @@
 import Foundation
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 
 @MainActor
@@ -16,11 +17,11 @@ public final class AuthViewModel {
     public var username: String
     public var state: State
 
-    private let sessionInteractor: SessionInteractorProtocol
+    private let loginUseCase: LoginAction
     private let router: AppRouterProtocol
 
-    init(sessionInteractor: SessionInteractorProtocol, router: AppRouterProtocol) {
-        self.sessionInteractor = sessionInteractor
+    init(loginUseCase: @escaping LoginAction, router: AppRouterProtocol) {
+        self.loginUseCase = loginUseCase
         self.router = router
         self.username = ""
         self.state = .idle
@@ -39,7 +40,7 @@ public final class AuthViewModel {
 
         state = .submitting
         do {
-            _ = try await sessionInteractor.login(username: trimmed)
+            _ = try await loginUseCase(trimmed)
             state = .success
             router.dismissSheet()
         } catch {

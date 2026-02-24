@@ -1,5 +1,6 @@
 import SwiftUI
-import Domain
+import DomainModels
+import DomainUseCases
 
 extension FavoriteListColor {
     var uiColor: Color {

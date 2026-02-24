@@ -1,7 +1,7 @@
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
-import Utilities
 
 @MainActor
 @Observable
@@ -10,23 +10,38 @@ public final class FavoriteListsManageViewModel {
     public var currentUser: User?
     public var errorMessage: String?
 
-    private let sessionInteractor: SessionInteractorProtocol
-    private let favoriteListsInteractor: FavoriteListsInteractorProtocol
+    private let currentUserUseCase: CurrentUserReader
+    private let currentUserSequenceUseCase: CurrentUserSequenceSource
+    private let favoriteListsStateUseCase: FavoriteListsReader
+    private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
+    private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
+    private let renameFavoriteListUseCase: RenameFavoriteListAction
+    private let deleteFavoriteListUseCase: DeleteFavoriteListAction
     private let router: AppRouterProtocol
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
     @ObservationIgnored private var listsTask: Task<Void, Never>?
 
     init(
-        sessionInteractor: SessionInteractorProtocol,
-        favoriteListsInteractor: FavoriteListsInteractorProtocol,
+        currentUserUseCase: @escaping CurrentUserReader,
+        currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
+        favoriteListsStateUseCase: @escaping FavoriteListsReader,
+        favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
+        refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
+        renameFavoriteListUseCase: @escaping RenameFavoriteListAction,
+        deleteFavoriteListUseCase: @escaping DeleteFavoriteListAction,
         router: AppRouterProtocol
     ) {
-        self.sessionInteractor = sessionInteractor
-        self.favoriteListsInteractor = favoriteListsInteractor
+        self.currentUserUseCase = currentUserUseCase
+        self.currentUserSequenceUseCase = currentUserSequenceUseCase
+        self.favoriteListsStateUseCase = favoriteListsStateUseCase
+        self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
+        self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
+        self.renameFavoriteListUseCase = renameFavoriteListUseCase
+        self.deleteFavoriteListUseCase = deleteFavoriteListUseCase
         self.router = router
-        self.lists = favoriteListsInteractor.lists
-        self.currentUser = sessionInteractor.currentUser
+        self.lists = favoriteListsStateUseCase()
+        self.currentUser = currentUserUseCase()
         self.errorMessage = nil
     }
 
@@ -55,27 +70,33 @@ public final class FavoriteListsManageViewModel {
 
     private func subscribeToSession() {
         sessionTask?.cancel()
-        sessionTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
-            self?.currentUser = user
+        sessionTask = Task { [weak self, currentUserSequenceUseCase] in
+            for await user in currentUserSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.currentUser = user
+            }
         }
     }
 
     private func subscribeToLists() {
         listsTask?.cancel()
-        listsTask = observeChanges({ [favoriteListsInteractor] in favoriteListsInteractor.lists }) { [weak self] lists in
-            self?.lists = lists
+        listsTask = Task { [weak self, favoriteListsSequenceUseCase] in
+            for await lists in favoriteListsSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.lists = lists
+            }
         }
     }
 
     private func refreshListsIfNeeded() async {
         guard currentUser != nil else { return }
-        try? await favoriteListsInteractor.refresh()
+        try? await refreshFavoriteListsUseCase()
     }
 
     private func renameList(listId: FavoriteListID, name: String) async {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         do {
-            try await favoriteListsInteractor.rename(listId: listId, name: name)
+            try await renameFavoriteListUseCase(listId, name)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -83,7 +104,7 @@ public final class FavoriteListsManageViewModel {
 
     private func deleteList(listId: FavoriteListID) async {
         do {
-            try await favoriteListsInteractor.delete(listId: listId)
+            try await deleteFavoriteListUseCase(listId)
         } catch {
             errorMessage = error.localizedDescription
         }

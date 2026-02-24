@@ -1,6 +1,7 @@
 import Foundation
 import Testing
-import Domain
+import DomainModels
+import DomainUseCases
 import DomainMocks
 import Router
 import AuthButton
@@ -11,16 +12,19 @@ struct FavoriteListViewModelTests {
     @Test
     func idleStateWhenNoUser() async {
         let router = AppRouterMock()
-        let session = SessionInteractorMock(currentUser: nil)
-        let listsRepository = FavoriteListsRepositoryMock()
-        let favoriteListsInteractor = FavoriteListsInteractor(
-            listsRepository: listsRepository,
-            sessionInteractor: session
+        let session = SessionUseCaseMock(currentUser: nil)
+        let favoriteListsUseCases = FavoriteListsUseCaseMock()
+        let authButtonBuilder = AuthButtonBuilder(
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            router: router
         )
-        let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let viewModel = FavoriteListViewModel(
-            sessionInteractor: session,
-            favoriteListsInteractor: favoriteListsInteractor,
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            favoriteListsStateUseCase: { favoriteListsUseCases.lists },
+            favoriteListsSequenceUseCase: { favoriteListsUseCases.listsSequence },
+            refreshFavoriteListsUseCase: { try await favoriteListsUseCases.refresh() },
             router: router,
             authButtonBuilder: authButtonBuilder
         )
@@ -34,16 +38,19 @@ struct FavoriteListViewModelTests {
     @Test
     func loadedStateWhenUserAndFavoritesPresent() async {
         let router = AppRouterMock()
-        let session = SessionInteractorMock(currentUser: nil)
-        let listsRepository = FavoriteListsRepositoryMock()
-        let favoriteListsInteractor = FavoriteListsInteractor(
-            listsRepository: listsRepository,
-            sessionInteractor: session
+        let session = SessionUseCaseMock(currentUser: nil)
+        let favoriteListsUseCases = FavoriteListsUseCaseMock()
+        let authButtonBuilder = AuthButtonBuilder(
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            router: router
         )
-        let authButtonBuilder = AuthButtonBuilder(sessionInteractor: session, router: router)
         let viewModel = FavoriteListViewModel(
-            sessionInteractor: session,
-            favoriteListsInteractor: favoriteListsInteractor,
+            currentUserUseCase: { session.currentUser },
+            currentUserSequenceUseCase: { session.currentUserSequence },
+            favoriteListsStateUseCase: { favoriteListsUseCases.lists },
+            favoriteListsSequenceUseCase: { favoriteListsUseCases.listsSequence },
+            refreshFavoriteListsUseCase: { try await favoriteListsUseCases.refresh() },
             router: router,
             authButtonBuilder: authButtonBuilder
         )

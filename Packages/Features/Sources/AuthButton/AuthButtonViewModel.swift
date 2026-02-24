@@ -1,22 +1,28 @@
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
-import Utilities
 
 @MainActor
 @Observable
 public final class AuthButtonViewModel {
     public var title: String = "Login"
 
-    private let sessionInteractor: SessionInteractorProtocol
+    private let currentUserUseCase: CurrentUserReader
+    private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let router: AppRouterProtocol
     private var currentUser: User?
     @ObservationIgnored private var streamTask: Task<Void, Never>?
 
-    init(sessionInteractor: SessionInteractorProtocol, router: AppRouterProtocol) {
-        self.sessionInteractor = sessionInteractor
+    init(
+        currentUserUseCase: @escaping CurrentUserReader,
+        currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
+        router: AppRouterProtocol
+    ) {
+        self.currentUserUseCase = currentUserUseCase
+        self.currentUserSequenceUseCase = currentUserSequenceUseCase
         self.router = router
-        applySession(sessionInteractor.currentUser)
+        applySession(currentUserUseCase())
         subscribe()
     }
 
@@ -33,8 +39,12 @@ public final class AuthButtonViewModel {
     }
 
     private func subscribe() {
-        streamTask = observeChanges({ [sessionInteractor] in sessionInteractor.currentUser }) { [weak self] user in
-            self?.applySession(user)
+        streamTask?.cancel()
+        streamTask = Task { [weak self, currentUserSequenceUseCase] in
+            for await user in currentUserSequenceUseCase() {
+                guard !Task.isCancelled else { break }
+                self?.applySession(user)
+            }
         }
     }
 

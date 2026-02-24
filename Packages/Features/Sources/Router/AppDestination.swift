@@ -1,4 +1,5 @@
-import Domain
+import DomainModels
+import DomainUseCases
 
 public struct AppDestination<Value: Hashable & Sendable>: Identifiable, Equatable, Hashable, Sendable {
     public let value: Value

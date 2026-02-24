@@ -1,115 +1,221 @@
 # MovieHub
 
-MovieHub is a sample SwiftUI app that demonstrates a modular, testable architecture using SwiftPM packages, Swift Concurrency, and TMDb API v3.
+MovieHub is a sample SwiftUI app that demonstrates a modular architecture with SwiftPM packages, Swift Concurrency, and TMDb API v3.
 
 ## Features
-- Search movies (TMDb)
+- Movie search (TMDb)
 - Movie details (poster, overview, genres)
-- Favorites per user
+- Per-user favorites lists
 - Lightweight auth (username only)
-- Centralized navigation via Router
-- Modular SwiftPM packages
+- Router-based navigation (push + sheet)
+- Modular feature libraries (`MovieList`, `MovieDetails`, `FavoriteList`, `FavoriteListDetails`, etc.)
 
-## Architecture
-This project is split into four layers: `Domain`, `Data`, `Features`, and `App`.
-Three of them are SwiftPM packages to keep them cross‑platform and fast to build/test with `swift build` and `swift test`.
-This is useful for fast iteration and for LLM‑driven changes where quick compilation matters.
-In practice, `Features` can become iOS‑specific (SwiftUI or snapshot tests), and `Data` can also become iOS‑specific (SwiftData or third‑party SDKs).
-The minimum goal is to keep `Domain` cross‑platform; for `Data` we can split iOS‑specific parts into a separate package if needed.
+## Architecture Overview
+The project is split into four layers:
+- `Domain` package (exports multiple products)
+- `Data` package
+- `Features` package
+- `App` target (`moviehub`)
 
-### Layer dependencies
-- `Utilities` has **no dependencies** (cross-platform helpers).
-- `Domain` depends **only on Utilities**.
-- `Data` depends **only on Domain**.
-- `Features` depends **only on Domain and Utilities** and does **not** know about `Data`.
-- `App` knows about all layers and composes them together.
+The key design goal is **strict dependency direction** and **LLM-friendly composition**:
+- Features depend only on domain models/use-case APIs (closures), never on repository protocols or Data implementations.
+- Data implements repository protocols and owns persistence/networking.
+- App composes concrete repositories + use cases and injects closures into features.
 
-### Layer responsibilities
-**Utilities**
-- Cross-platform helpers shared across packages
-- `observeChanges` — loop-based observation helper for subscribing to `@Observable` properties
+## Domain Package Products (Important)
+The SwiftPM package is named `Domain`, but it exports separate products/modules:
+- There is no `Domain` module/product anymore.
+- `DomainModels`
+- `DomainUseCases`
+- `DomainRepositories`
+- `DomainMocks`
 
-**Domain**
-- Business logic and data state (e.g., current user) not tied to UI
-- Models, errors, utilities
-- Protocols for data access
-- Interactors (data state + Observation via `observeChanges`):
-  - `SessionInteractor` — user session (login/logout)
-  - `FavoriteListsInteractor` — list CRUD (create, rename, delete, refresh)
-  - `FavoritesInteractor` — movie-in-list operations (add/remove favorite, lookup, in-memory caches)
-- `DomainMocks` for previews/tests (kept here for convenience)
+### What each module contains
+**`DomainModels`**
+- Entities (`Movie`, `MovieDetails`, `FavoriteList`, `User`)
+- ID wrappers (`MovieID`, `FavoriteListID`, `UserID`)
+- Domain errors (`AuthRequiredError`)
+- Pure domain helpers (`UsernameNormalizer`)
+
+**`DomainUseCases`**
+- Single-purpose use cases (one responsibility per file)
+- Feature-facing closure aliases (`UseCaseClosureTypes.swift`) are the primary dependency API for Features (instead of `*UseCaseProtocol`), e.g.:
+  - `LoginAction`
+  - `CurrentUserReader`
+  - `FavoriteListsSequenceSource`
+  - `SearchMoviesAction`
+  - `MovieDetailsAction`
+- No use case protocols
+- No `@Observable` use cases
+
+**`DomainRepositories`**
+- Repository protocols only (contracts)
+- Includes repository-owned state + async sequence contracts
+- Uses pure Swift Concurrency surface (`async/await`, `AsyncSequence`) and does not expose Combine types
+
+**`DomainMocks`**
+- Mocks used by previews/tests
+- Includes repository mocks and lightweight use-case-style mocks
+
+## Dependency Rules (Current)
+### Cross-package rules
+- `Features` imports **only** `DomainModels` and `DomainUseCases` from the Domain package
+- `Features` may import `DomainMocks` only for preview/test helper code paths
+- `Features` does **not** import `DomainRepositories`
+- `Features` does **not** import `Data`
+- `Data` imports `DomainModels` + `DomainRepositories`
+- `App` imports `DomainModels`, `DomainUseCases`, `Data`, and feature modules
+
+### Why this matters
+This keeps Features independent from storage/network details and makes it easy to rewire dependencies in `AppContainer` using closures.
+
+## Layer Responsibilities
+**Domain (products in the Domain package)**
+- Domain models, repository protocols, and business use cases
+- Repository protocols define the state contracts and async sequences
+- Use cases orchestrate business actions (auth checks, mutations, cross-repository flows)
 
 **Data**
-- Implements Domain protocols
-- Network and persistence (TMDb API + SwiftData)
-- Owns DTOs and mapping
-- No business logic; executes commands from Domain
+- Implements repository protocols using TMDb + SwiftData
+- Owns DTOs and persistence mapping
+- Owns repository state required by contracts (e.g. current user, lists caches, favorites caches)
+- No business orchestration
 
 **Features**
-- UI modules + ViewModels (view state only: loading flags, errors, selections)
-- Entry point is a `Builder` that receives dependencies and builds a screen
-- Allows nested features and composition
-- Contains a Router library that owns navigation state
-- Features call router methods to request navigation
+- SwiftUI feature libraries and ViewModels
+- ViewModels own only view state (loading/error/selection/presentation state)
+- Builders receive dependencies and construct screens
+- Dependencies are closure-based (via `DomainUseCases` typealiases), not repository protocols
+- Runtime observation uses async sequences injected from App composition
 
 **App**
-- Composition root (DI)
-- Creates concrete implementations and wires Features
-- Owns actual presentation (push/sheet) based on Router state
+- Composition root / DI
+- Creates concrete repositories and use cases
+- Injects:
+  - direct repository closures for simple state reads/streams
+  - use-case closures for business actions
+- Hosts Router navigation and screen presentation
 
-### Diagram
-```mermaid
-graph TD
-    App[App]
-    Features[Features]
-    Router[Router]
-    Domain[Domain]
-    Data[Data]
-    Utilities[Utilities]
+## Current Architectural Patterns
+### 1) Single-purpose use cases
+Use cases are intentionally small and specific. Examples:
+- `LoginUseCase`
+- `LogoutUseCase`
+- `RefreshFavoriteListsUseCase`
+- `CreateFavoriteListUseCase`
+- `AddFavoriteUseCase`
+- `LookupFavoriteListUseCase`
 
-    App --> Features
-    App --> Data
-    App --> Domain
+This replaces old grouped “interactor/facade” objects.
 
-    Features --> Domain
-    Features --> Router
-    Features --> Utilities
+### 2) Closure-based feature dependencies (no UseCase protocols)
+Features receive closures instead of `*UseCaseProtocol` types.
 
-    Router --> Domain
-
-    Data --> Domain
-
-    Domain --> Utilities
+Example pattern:
+```swift
+public typealias FavoriteListsReader = @MainActor () -> [FavoriteList]
+public typealias RefreshFavoriteListsAction = @MainActor () async throws -> Void
 ```
 
+This keeps feature dependencies explicit and lightweight.
+
+In practice, the closure `typealias`es in `DomainUseCases/UseCaseClosureTypes.swift` are the stable, feature-facing API shape for dependency injection.
+
+### 3) Repository-owned state + async sequences
+Local state previously held in interactors now lives in repositories.
+Repository protocols expose both current values and streams, for example:
+- `currentUser` + `currentUserSequence`
+- `lists` + `listsSequence`
+- `favoritesByList` + `favoritesByListSequence`
+- `favoriteListByMovie` + `favoriteListByMovieSequence`
+
+### 4) Async sequence observation in ViewModels
+`Utilities` package was removed. Runtime observation now uses injected async sequences:
+- ViewModel starts `Task`
+- `for await` over injected sequence source
+- updates local view state
+- cancels tasks in `deinit`
+
+### 4.1) Combine in Data, Swift Concurrency in Domain/Features (bridge pattern)
+This project intentionally keeps **Combine** as an implementation detail of the **Data** layer while exposing **pure Swift Concurrency APIs** to the rest of the app.
+
+- Domain repository protocols expose:
+  - current state values
+  - `AsyncSequence` streams
+- Features consume only async sequences (`for await`) and closures
+- Data repositories may internally use `CurrentValueSubject` (Combine) to publish state changes
+- Data repositories bridge to Domain contracts using `subject.values` to return an `AsyncSequence`
+
+This gives ergonomic mutable stream handling in Data without leaking Combine into Domain or Features.
+
+### 5) Simple state passthroughs are injected directly from repositories
+Some former “read-only use cases” were removed (e.g. current user/list state wrappers).
+App composition injects direct closures instead, e.g.:
+```swift
+currentUserUseCase: { container.profileRepository.currentUser }
+currentUserSequenceUseCase: { container.profileRepository.currentUserSequence }
+```
+
+Use cases remain for behavioral logic, validation, and mutations.
+
 ## Navigation
-- Router owns per‑tab navigation stacks + sheet presentation.
-- Features call `router.push(...)` for pushes and `router.present(...)` for sheets.
-- App builds screens based on Router state.
+- Router owns per-tab `NavigationStack` paths and sheet presentation.
+- Features emit navigation intents through `router.push(...)` / `router.present(...)`.
+- App renders destinations based on Router state.
+
+## Package/Module Diagram
+```mermaid
+graph TD
+    App["App (moviehub)"]
+    Data["Data"]
+    Features["Features modules"]
+    DM["DomainModels"]
+    DU["DomainUseCases"]
+    DR["DomainRepositories"]
+    DMocks["DomainMocks"]
+
+    App --> Data
+    App --> Features
+    App --> DM
+    App --> DU
+
+    Features --> DM
+    Features --> DU
+
+    Data --> DM
+    Data --> DR
+
+    DU --> DM
+    DU --> DR
+
+    DMocks --> DM
+    DMocks --> DU
+    DMocks --> DR
+```
 
 ## TMDb API Setup
 This project uses The Movie Database (TMDb) API v3. The token must not be committed.
 
-1) Create a TMDb account
-2) Generate an **API Read Access Token**
-3) Copy the example config:
+1. Create a TMDb account
+2. Generate an **API Read Access Token**
+3. Copy the example config:
 
 ```bash
 cp Secrets.example.xcconfig Secrets.xcconfig
 ```
 
-4) Put your token into `Secrets.xcconfig`:
+4. Put your token into `Secrets.xcconfig`:
 
-```
+```xcconfig
 TMDB_READ_TOKEN = YOUR_TMDB_READ_ACCESS_TOKEN_HERE
 ```
 
-5) Build & run
+5. Build & run
 
 `Secrets.xcconfig` is ignored by git.
 
 ## Testing
-Run tests from the package folders:
+Run tests from package folders:
 
 ```bash
 cd Packages/Domain && swift test
@@ -117,16 +223,19 @@ cd ../Data && swift test
 cd ../Features && swift test
 ```
 
-Tests use the **direct await** pattern: ViewModels expose sync methods for SwiftUI (e.g., `loginTapped()`) that wrap internal async methods (e.g., `login()`). Tests call the async methods directly via `@testable import`, then assert final state — no polling, timeouts, or observation tracking needed.
+ViewModel tests use the direct async method pattern via `@testable import`:
 
 ```swift
 await viewModel.login()
 #expect(viewModel.state == .success)
 ```
 
+No polling or observation helpers are needed.
+
 ## Notes
-- Minimum platforms: iOS 17, macOS 15
-- No Combine
-- Data state lives in Domain Interactors (split by concern: lists vs favorites vs session)
-- View state lives in ViewModels
-- Observation subscriptions use `observeChanges` from Utilities (not manual `withObservationTracking` loops)
+- Minimum platforms: iOS 18, macOS 15
+- `Utilities` package was removed
+- `FavoriteListDetails` is a separate feature library
+- Avoid introducing `Data` or `DomainRepositories` imports into Features
+- Avoid introducing grouped/facade use cases or `*UseCaseProtocol` abstractions
+- Keep Combine confined to Data/Mocks implementation details; Domain/Features APIs remain Swift Concurrency-first

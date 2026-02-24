@@ -1,5 +1,6 @@
 import Foundation
-import Domain
+import DomainModels
+import DomainUseCases
 
 public struct MovieDetailsPresentationModel: Sendable {
     public let id: MovieID

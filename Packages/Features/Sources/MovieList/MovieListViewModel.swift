@@ -1,6 +1,7 @@
 import Foundation
 import Observation
-import Domain
+import DomainModels
+import DomainUseCases
 import Router
 import AuthButton
 
@@ -17,16 +18,16 @@ public final class MovieListViewModel {
     public var searchText: String = "spider-man"
     public var state: State
 
-    private let movieRepository: MovieRepositoryProtocol
+    private let searchMoviesUseCase: SearchMoviesAction
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     init(
-        movieRepository: MovieRepositoryProtocol,
+        searchMoviesUseCase: @escaping SearchMoviesAction,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
-        self.movieRepository = movieRepository
+        self.searchMoviesUseCase = searchMoviesUseCase
         self.router = router
         self.authButtonBuilder = authButtonBuilder
         self.state = .idle
@@ -50,7 +51,7 @@ public final class MovieListViewModel {
     func search() async {
         state = .loading
         do {
-            let results = try await movieRepository.search(query: searchText)
+            let results = try await searchMoviesUseCase(searchText)
             let tiles = results.map { movie in
                 MovieTilePresentationModel(
                     id: movie.id,

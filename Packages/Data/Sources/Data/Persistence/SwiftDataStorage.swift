@@ -1,8 +1,8 @@
 import Foundation
 import SwiftData
-import Domain
+import DomainModels
 
-public actor SwiftDataStorage: ProfileRepositoryProtocol, FavoritesRepositoryProtocol, FavoriteListsRepositoryProtocol {
+public actor SwiftDataStorage {
     private let container: ModelContainer
     private let context: ModelContext
 

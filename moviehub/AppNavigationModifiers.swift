@@ -1,8 +1,11 @@
 import SwiftUI
 import Observation
+import DomainModels
+import DomainUseCases
+import Data
 import Router
 import MovieDetails
-import FavoriteList
+import FavoriteListDetails
 import FavoriteListCreate
 import FavoriteListPicker
 import Auth
@@ -18,19 +21,37 @@ struct AppNavigationDestinationModifier: ViewModifier {
             switch destination.value {
             case .movieDetails(let movieId):
                 MovieDetailsBuilder(
-                    movieRepository: container.movieRepository,
-                    sessionInteractor: container.sessionInteractor,
-                    favoriteListsInteractor: container.favoriteListsInteractor,
-                    favoritesInteractor: container.favoritesInteractor,
+                    movieDetailsUseCase: { movieId in
+                        try await container.movieRepository.details(id: movieId)
+                    },
+                    currentUserUseCase: { container.profileRepository.currentUser },
+                    currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                    favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
+                    favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
+                    favoriteListByMovieStateUseCase: { container.favoritesRepository.favoriteListByMovie },
+                    favoriteListByMovieSequenceUseCase: { container.favoritesRepository.favoriteListByMovieSequence },
+                    removeFavoriteUseCase: { movieId in
+                        try await container.removeFavoriteUseCase.removeFavorite(movieId: movieId)
+                    },
+                    lookupFavoriteListUseCase: { movieId in
+                        try await container.lookupFavoriteListUseCase.favoriteListId(movieId: movieId)
+                    },
                     router: router,
                     authButtonBuilder: authButtonBuilder
                 ).build(movieId: movieId)
             case .favoriteListDetails(let listId):
                 FavoriteListDetailsBuilder(
                     listId: listId,
-                    sessionInteractor: container.sessionInteractor,
-                    favoriteListsInteractor: container.favoriteListsInteractor,
-                    favoritesInteractor: container.favoritesInteractor,
+                    currentUserUseCase: { container.profileRepository.currentUser },
+                    currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                    favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
+                    favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
+                    refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
+                    favoritesByListStateUseCase: { container.favoritesRepository.favoritesByList },
+                    favoritesByListSequenceUseCase: { container.favoritesRepository.favoritesByListSequence },
+                    refreshFavoritesUseCase: { listId in
+                        try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
+                    },
                     router: router,
                     authButtonBuilder: authButtonBuilder
                 ).build()
@@ -48,27 +69,37 @@ struct AppPresentationModifier: ViewModifier {
             switch destination.value {
             case .auth:
                 AuthBuilder(
-                    sessionInteractor: container.sessionInteractor,
+                    loginUseCase: { username in
+                        try await container.loginUseCase.login(username: username)
+                    },
                     router: router
                 ).build()
             case .favoriteListPicker(let details):
                 NavigationStack {
                     FavoriteListPickerBuilder(
                         movieDetails: details,
-                        sessionInteractor: container.sessionInteractor,
-                        favoriteListsInteractor: container.favoriteListsInteractor,
-                        favoritesInteractor: container.favoritesInteractor,
+                        currentUserUseCase: { container.profileRepository.currentUser },
+                        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                        favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
+                        favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
+                        refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
+                        addFavoriteUseCase: { movie, listId in
+                            try await container.addFavoriteUseCase.addFavorite(movie: movie, listId: listId)
+                        },
                         router: router,
                         authButtonBuilder: AuthButtonBuilder(
-                            sessionInteractor: container.sessionInteractor,
+                            currentUserUseCase: { container.profileRepository.currentUser },
+                            currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
                             router: router
                         )
                     ).build()
                 }
             case .favoriteListCreate:
                 FavoriteListCreateBuilder(
-                    favoriteListsInteractor: container.favoriteListsInteractor,
-                    sessionInteractor: container.sessionInteractor,
+                    createFavoriteListUseCase: { name, color in
+                        try await container.createFavoriteListUseCase.create(name: name, color: color)
+                    },
+                    currentUserUseCase: { container.profileRepository.currentUser },
                     router: router
                 ).build()
             }

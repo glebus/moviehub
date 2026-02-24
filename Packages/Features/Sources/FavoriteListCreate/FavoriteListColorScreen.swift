@@ -1,5 +1,6 @@
 import SwiftUI
-import Domain
+import DomainModels
+import DomainUseCases
 
 struct FavoriteListColorScreen: View {
     @Bindable var viewModel: FavoriteListCreateViewModel

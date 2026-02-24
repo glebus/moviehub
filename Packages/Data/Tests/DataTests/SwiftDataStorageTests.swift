@@ -1,5 +1,5 @@
 import Testing
-import Domain
+import DomainModels
 @testable import Data
 
 @MainActor
