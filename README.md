@@ -1,6 +1,6 @@
 # MovieHub
 
-MovieHub is a sample SwiftUI app that demonstrates a modular architecture with SwiftPM packages, Swift Concurrency, and TMDb API v3.
+MovieHub is a sample SwiftUI app that demonstrates a modular architecture with SwiftPM packages, Data Flows, and TMDb API v3.
 
 ## Features
 - Movie search (TMDb)
@@ -24,7 +24,6 @@ The key design goal is **strict dependency direction** and **LLM-friendly compos
 
 ## Domain Package Products (Important)
 The SwiftPM package is named `Domain`, but it exports separate products/modules:
-- There is no `Domain` module/product anymore.
 - `DomainModels`
 - `DomainUseCases`
 - `DomainRepositories`
@@ -39,7 +38,7 @@ The SwiftPM package is named `Domain`, but it exports separate products/modules:
 
 **`DomainUseCases`**
 - Single-purpose use cases (one responsibility per file)
-- Feature-facing closure aliases (`UseCaseClosureTypes.swift`) are the primary dependency API for Features (instead of `*UseCaseProtocol`), e.g.:
+- Feature-facing closure aliases (`UseCaseClosureTypes.swift`) are the primary dependency API for Features, e.g.:
   - `LoginAction`
   - `CurrentUserReader`
   - `FavoriteListsSequenceSource`
@@ -105,8 +104,6 @@ Use cases are intentionally small and specific. Examples:
 - `CreateFavoriteListUseCase`
 - `AddFavoriteUseCase`
 - `LookupFavoriteListUseCase`
-
-This replaces old grouped “interactor/facade” objects.
 
 ### 2) Closure-based feature dependencies (no UseCase protocols)
 Features receive closures instead of `*UseCaseProtocol` types.
@@ -234,8 +231,6 @@ No polling or observation helpers are needed.
 
 ## Notes
 - Minimum platforms: iOS 18, macOS 15
-- `Utilities` package was removed
-- `FavoriteListDetails` is a separate feature library
 - Avoid introducing `Data` or `DomainRepositories` imports into Features
 - Avoid introducing grouped/facade use cases or `*UseCaseProtocol` abstractions
 - Keep Combine confined to Data/Mocks implementation details; Domain/Features APIs remain Swift Concurrency-first
