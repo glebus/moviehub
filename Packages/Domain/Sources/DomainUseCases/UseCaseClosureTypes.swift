@@ -21,3 +21,11 @@ public typealias RefreshFavoritesAction = @MainActor (FavoriteListID) async thro
 public typealias AddFavoriteAction = @MainActor (MovieDetails, FavoriteListID) async throws -> Void
 public typealias RemoveFavoriteAction = @MainActor (MovieID) async throws -> Void
 public typealias LookupFavoriteListAction = @MainActor (MovieID) async throws -> FavoriteListID?
+public typealias HandleMovieDetailsFavoriteTapAction = @MainActor (MovieDetails) async throws -> HandleMovieDetailsFavoriteTapResult
+
+public enum HandleMovieDetailsFavoriteTapResult: Sendable {
+    case requireAuth
+    case showCreateList
+    case showPicker(MovieDetails)
+    case removed
+}

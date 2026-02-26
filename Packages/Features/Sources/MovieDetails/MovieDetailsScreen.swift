@@ -58,19 +58,9 @@ public struct MovieDetailsScreen: View {
                         }
                     }
 
-                    Button(viewModel.favoriteButtonTitle) {
-                        viewModel.favoriteButtonTapped()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!viewModel.favoriteButtonEnabled)
+                    viewModel.favoriteButtonView()
                 case .error(let message):
                     Text(message)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
                         .font(.footnote)
                         .foregroundStyle(.red)
                 }

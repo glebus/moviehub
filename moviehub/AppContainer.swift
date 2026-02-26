@@ -19,6 +19,7 @@ final class AppContainer {
     let addFavoriteUseCase: AddFavoriteUseCase
     let removeFavoriteUseCase: RemoveFavoriteUseCase
     let lookupFavoriteListUseCase: LookupFavoriteListUseCase
+    let handleMovieDetailsFavoriteTapUseCase: HandleMovieDetailsFavoriteTapUseCase
 
     init() {
         let httpClient = URLSessionHTTPClient()
@@ -74,6 +75,11 @@ final class AppContainer {
         self.lookupFavoriteListUseCase = LookupFavoriteListUseCase(
             favoritesRepository: favoritesRepository,
             profileRepository: profileRepository
+        )
+        self.handleMovieDetailsFavoriteTapUseCase = HandleMovieDetailsFavoriteTapUseCase(
+            profileRepository: profileRepository,
+            favoriteListsRepository: favoriteListsRepository,
+            favoritesRepository: favoritesRepository
         )
     }
 }

@@ -5,6 +5,7 @@ import DomainUseCases
 import Data
 import Router
 import MovieDetails
+import MovieDetailsFavoriteButton
 import FavoriteListDetails
 import FavoriteListCreate
 import FavoriteListPicker
@@ -24,20 +25,20 @@ struct AppNavigationDestinationModifier: ViewModifier {
                     movieDetailsUseCase: { movieId in
                         try await container.movieRepository.details(id: movieId)
                     },
-                    currentUserUseCase: { container.profileRepository.currentUser },
-                    currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-                    favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
-                    favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
-                    favoriteListByMovieStateUseCase: { container.favoritesRepository.favoriteListByMovie },
-                    favoriteListByMovieSequenceUseCase: { container.favoritesRepository.favoriteListByMovieSequence },
-                    removeFavoriteUseCase: { movieId in
-                        try await container.removeFavoriteUseCase.removeFavorite(movieId: movieId)
-                    },
-                    lookupFavoriteListUseCase: { movieId in
-                        try await container.lookupFavoriteListUseCase.favoriteListId(movieId: movieId)
-                    },
-                    router: router,
-                    authButtonBuilder: authButtonBuilder
+                    authButtonBuilder: authButtonBuilder,
+                    favoriteButtonBuilder: MovieDetailsFavoriteButtonBuilder(
+                        currentUserUseCase: { container.profileRepository.currentUser },
+                        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                        favoriteListByMovieStateUseCase: { container.favoritesRepository.favoriteListByMovie },
+                        favoriteListByMovieSequenceUseCase: { container.favoritesRepository.favoriteListByMovieSequence },
+                        handleFavoriteTapUseCase: { movieDetails in
+                            try await container.handleMovieDetailsFavoriteTapUseCase.handleTap(movieDetails: movieDetails)
+                        },
+                        lookupFavoriteListUseCase: { movieId in
+                            try await container.lookupFavoriteListUseCase.favoriteListId(movieId: movieId)
+                        },
+                        router: router
+                    )
                 ).build(movieId: movieId)
             case .favoriteListDetails(let listId):
                 FavoriteListDetailsBuilder(

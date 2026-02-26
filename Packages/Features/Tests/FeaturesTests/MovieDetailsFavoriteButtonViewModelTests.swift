@@ -1,26 +1,18 @@
 import Testing
 import DomainModels
-import DomainUseCases
 import DomainMocks
 import Router
-import AuthButton
-import MovieDetailsFavoriteButton
-@testable import MovieDetails
+@testable import MovieDetailsFavoriteButton
 
 @MainActor
-struct MovieDetailsViewModelTests {
+struct MovieDetailsFavoriteButtonViewModelTests {
     @Test
-    func onAppearLoadsDetails() async {
+    func favoriteWithoutAuthPresentsAuthSheet() async {
         let router = AppRouterMock()
-        let session = SessionUseCaseMock()
+        let session = SessionUseCaseMock(currentUser: nil)
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let favoritesUseCases = FavoritesUseCaseMock()
-        let authButtonBuilder = AuthButtonBuilder(
-            currentUserUseCase: { session.currentUser },
-            currentUserSequenceUseCase: { session.currentUserSequence },
-            router: router
-        )
-        let favoriteButtonBuilder = MovieDetailsFavoriteButtonBuilder(
+        let builder = MovieDetailsFavoriteButtonBuilder(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
             favoriteListByMovieStateUseCase: { favoritesUseCases.favoriteListByMovie },
@@ -41,29 +33,19 @@ struct MovieDetailsViewModelTests {
             lookupFavoriteListUseCase: { try await favoritesUseCases.favoriteListId(movieId: $0) },
             router: router
         )
-        let repo = MovieRepositoryMock(
-            detailsResult: MovieDetails(
+        let viewModel = builder.makeViewModel(movieDetails:
+            MovieDetails(
                 id: MovieID("10"),
                 title: "Details",
                 posterURL: nil,
-                overview: "Overview",
-                genres: ["Drama"],
+                overview: nil,
+                genres: [],
                 imdbURL: nil
             )
         )
-        let viewModel = MovieDetailsViewModel(
-            movieId: MovieID("10"),
-            movieDetailsUseCase: { id in try await repo.details(id: id) },
-            authButtonBuilder: authButtonBuilder,
-            favoriteButtonBuilder: favoriteButtonBuilder
-        )
 
-        await viewModel.loadDetails()
+        await viewModel.toggleFavorite()
 
-        guard case .loaded(let model) = viewModel.state else {
-            fail("Expected loaded state after onAppear")
-            return
-        }
-        #expect(model.title == "Details")
+        #expect(router.lastSheetDestination == .auth)
     }
 }
