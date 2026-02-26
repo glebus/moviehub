@@ -61,7 +61,8 @@ The SwiftPM package is named `Domain`, but it exports multiple products:
 - Builders are feature entry points.
 - ViewModels depend on closures/typealiases from `DomainUseCases`, not repository protocols.
 - ViewModels consume repository-backed async sequences through injected closure sources.
-- Navigation is emitted through Router only.
+- Cross-feature/app navigation is emitted through Router.
+- Feature-local multi-step navigation may be mediated by a feature coordinator object inside the feature.
 
 **App**
 - Composition root (DI).
@@ -96,7 +97,7 @@ Use a **direct repository closure from App composition** for simple reads/stream
 Repositories own local state that was previously in interactors, including:
 - `ProfileRepositoryProtocol`: `currentUser`, `currentUserSequence`
 - `FavoriteListsRepositoryProtocol`: `lists`, `listsSequence`
-- `FavoritesRepositoryProtocol`: `favoritesByList`, `favoritesByListSequence`, `favoriteListByMovie`, `favoriteListByMovieSequence`
+- `FavoritesRepositoryProtocol`: `favoritesByList`, `favoritesByListSequence`, `favoriteListsByMovie`, `favoriteListsByMovieSequence`
 
 ### Feature Observation Pattern (Strict)
 - `Utilities` package was removed.
@@ -124,20 +125,26 @@ Repositories own local state that was previously in interactors, including:
 - `AuthButtonBuilder` is stored in ViewModels (not screens).
 - ViewModels expose sync methods for SwiftUI (`tap` handlers) that wrap internal async methods.
 - Async methods should remain `internal` for `@testable import` tests.
+- If a feature owns a multi-step flow, prefer a feature coordinator object for in-feature navigation.
+- In that pattern, ViewModels should depend on the feature coordinator (not directly on `PresentedSheetRouter`) for in-module navigation.
 
 ## Naming Conventions
 - Protocols must end with `Protocol`.
 - Concrete implementations use the base name without `Protocol`.
 - Repository protocols live only in `DomainRepositories`.
 - Use case names are verb-oriented and specific, e.g.:
-  - `LoginUseCase`
-  - `RefreshFavoriteListsUseCase`
-  - `LookupFavoriteListUseCase`
+- `LoginUseCase`
+- `RefreshFavoriteListsUseCase`
+- `LookupFavoriteListUseCase`
+- `LookupFavoriteListsUseCase`
+- `RemoveFavoriteFromListUseCase`
 - Closure aliases are action/query oriented, e.g.:
-  - `LoginAction`
-  - `CurrentUserReader`
-  - `FavoriteListsSequenceSource`
-  - `SearchMoviesAction`
+- `LoginAction`
+- `CurrentUserReader`
+- `FavoriteListsSequenceSource`
+- `SearchMoviesAction`
+- `LookupFavoriteListsAction`
+- `RemoveFavoriteFromListAction`
 - Prefer suffixes that reveal behavior:
   - `Reader` for sync reads
   - `Action` for async commands/queries with behavior
@@ -149,6 +156,13 @@ Repositories own local state that was previously in interactors, including:
 - Sheets: `router.present(AppSheetDestination)`.
 - App renders destinations from Router state.
 - Each tab owns its own `NavigationStack` path.
+- Presented sheets should use `PresentedSheetHost` as the single sheet `NavigationStack`.
+- `PresentedSheetRouter` owns the sheet-local shared `NavigationPath`.
+- Sheet features may append feature-local destination values to `PresentedSheetRouter.path` and register feature-level `.navigationDestination(for:)` handlers in their coordinator view.
+- Do not create a second `NavigationStack` inside a sheet feature coordinator when the feature is hosted by `PresentedSheetHost`.
+- For sheet multi-step flows (e.g. `FavoriteListCreate`), prefer this split:
+  - feature coordinator owns in-feature navigation + external routing through `PresentedSheetRouter`
+  - feature ViewModel depends only on the feature coordinator for navigation (not directly on `PresentedSheetRouter`)
 
 ## Testing
 - Use **Swift Testing**.

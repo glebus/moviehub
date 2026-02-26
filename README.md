@@ -6,6 +6,8 @@ MovieHub is a sample SwiftUI app that demonstrates a modular architecture with S
 - Movie search (TMDb)
 - Movie details (poster, overview, genres)
 - Per-user favorites lists
+- Post-create favorites flow (created confirmation + actions)
+- Quick add-movies screen for a favorites list (search + list toggles)
 - Lightweight auth (username only)
 - Router-based navigation (push + sheet)
 - Modular feature libraries (`MovieList`, `MovieDetails`, `FavoriteList`, `FavoriteListDetails`, etc.)
@@ -103,7 +105,9 @@ Use cases are intentionally small and specific. Examples:
 - `RefreshFavoriteListsUseCase`
 - `CreateFavoriteListUseCase`
 - `AddFavoriteUseCase`
+- `RemoveFavoriteFromListUseCase`
 - `LookupFavoriteListUseCase`
+- `LookupFavoriteListsUseCase`
 
 ### 2) Closure-based feature dependencies (no UseCase protocols)
 Features receive closures instead of `*UseCaseProtocol` types.
@@ -124,7 +128,7 @@ Repository protocols expose both current values and streams, for example:
 - `currentUser` + `currentUserSequence`
 - `lists` + `listsSequence`
 - `favoritesByList` + `favoritesByListSequence`
-- `favoriteListByMovie` + `favoriteListByMovieSequence`
+- `favoriteListsByMovie` + `favoriteListsByMovieSequence`
 
 ### 4) Async sequence observation in ViewModels
 `Utilities` package was removed. Runtime observation now uses injected async sequences:
@@ -157,8 +161,17 @@ Use cases remain for behavioral logic, validation, and mutations.
 
 ## Navigation
 - Router owns per-tab `NavigationStack` paths and sheet presentation.
+- Presented sheets are hosted by `PresentedSheetHost` (single sheet `NavigationStack`).
+- `PresentedSheetRouter` owns a sheet-local shared `NavigationPath`.
+- Sheet features can append feature-local destination values to the shared sheet path and handle them via feature-level `.navigationDestination(for:)` in a coordinator view.
+- In multi-step sheet features, the feature coordinator should mediate both in-feature navigation and external sheet routing, while the ViewModel depends only on the coordinator for navigation.
 - Features emit navigation intents through `router.push(...)` / `router.present(...)`.
 - App renders destinations based on Router state.
+
+## Favorites Semantics (Current)
+- A movie can belong to multiple favorites lists for the same user.
+- Favorites membership lookups are set-based (`favoriteListsByMovie`, `LookupFavoriteListsUseCase`).
+- Movie-details favorite button still uses one-tap global remove semantics (remove from all lists).
 
 ## Package/Module Diagram
 ```mermaid
