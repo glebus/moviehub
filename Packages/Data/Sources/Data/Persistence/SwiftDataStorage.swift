@@ -48,16 +48,24 @@ public actor SwiftDataStorage {
         return results.first.map { FavoriteListID($0.listId) }
     }
 
-    public func addFavorite(userId: UserID, movie: MovieDetails, listId: FavoriteListID) async throws {
+    public func favoriteListIds(userId: UserID, movieId: MovieID) async throws -> Set<FavoriteListID> {
         let descriptor = FetchDescriptor<SDFavorite>(
-            predicate: #Predicate { $0.userId == userId.rawValue && $0.movieId == movie.id.rawValue }
+            predicate: #Predicate { $0.userId == userId.rawValue && $0.movieId == movieId.rawValue }
         )
         let results = try context.fetch(descriptor)
-        if let existing = results.first {
-            if existing.listId != listId.rawValue {
-                existing.listId = listId.rawValue
-                try context.save()
+        return Set(results.map { FavoriteListID($0.listId) })
+    }
+
+    public func addFavorite(userId: UserID, movie: MovieDetails, listId: FavoriteListID) async throws {
+        let descriptor = FetchDescriptor<SDFavorite>(
+            predicate: #Predicate {
+                $0.userId == userId.rawValue &&
+                $0.movieId == movie.id.rawValue &&
+                $0.listId == listId.rawValue
             }
+        )
+        let results = try context.fetch(descriptor)
+        if !results.isEmpty {
             return
         }
 
@@ -72,6 +80,23 @@ public actor SwiftDataStorage {
         )
         context.insert(favorite)
         try context.save()
+    }
+
+    public func removeFavorite(userId: UserID, movieId: MovieID, listId: FavoriteListID) async throws {
+        let descriptor = FetchDescriptor<SDFavorite>(
+            predicate: #Predicate {
+                $0.userId == userId.rawValue &&
+                $0.movieId == movieId.rawValue &&
+                $0.listId == listId.rawValue
+            }
+        )
+        let results = try context.fetch(descriptor)
+        for item in results {
+            context.delete(item)
+        }
+        if !results.isEmpty {
+            try context.save()
+        }
     }
 
     public func removeFavorite(userId: UserID, movieId: MovieID) async throws {

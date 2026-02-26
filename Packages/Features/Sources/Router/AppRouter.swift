@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 @MainActor
@@ -7,7 +8,7 @@ public final class AppRouter: AppRouterProtocol {
     public var homePath: [AppDestination<AppPushDestination>] = []
     public var favoritesPath: [AppDestination<AppPushDestination>] = []
     public var profilePath: [AppDestination<AppPushDestination>] = []
-    public var presentedSheet: AppDestination<AppSheetDestination>?
+    public var presentedSheet: PresentedSheetPresentation?
 
     public init() {}
 
@@ -24,7 +25,10 @@ public final class AppRouter: AppRouterProtocol {
     }
 
     public func present(_ destination: AppSheetDestination) {
-        presentedSheet = AppDestination(value: destination)
+        presentedSheet = PresentedSheetPresentation(
+            destination: AppDestination(value: destination),
+            childRouter: PresentedSheetRouter(parentRouter: self)
+        )
     }
 
     public func selectTab(_ tab: AppTab) {
@@ -55,6 +59,20 @@ public final class AppRouter: AppRouterProtocol {
         case .profile:
             profilePath.removeAll()
         }
+    }
+}
+
+public final class PresentedSheetPresentation: Identifiable {
+    public let id = UUID()
+    public let destination: AppDestination<AppSheetDestination>
+    public let childRouter: PresentedSheetRouter
+
+    public init(
+        destination: AppDestination<AppSheetDestination>,
+        childRouter: PresentedSheetRouter
+    ) {
+        self.destination = destination
+        self.childRouter = childRouter
     }
 }
 

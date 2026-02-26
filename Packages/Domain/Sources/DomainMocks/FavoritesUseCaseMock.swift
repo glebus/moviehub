@@ -11,20 +11,20 @@ public final class FavoritesUseCaseMock {
     public var favoritesByListSequence: any AsyncSequence<[FavoriteListID: [Movie]], Never> {
         favoritesByListSubject.values
     }
-    public private(set) var favoriteListByMovie: [MovieID: FavoriteListID]
-    private let favoriteListByMovieSubject: CurrentValueSubject<[MovieID: FavoriteListID], Never>
-    public var favoriteListByMovieSequence: any AsyncSequence<[MovieID: FavoriteListID], Never> {
-        favoriteListByMovieSubject.values
+    public private(set) var favoriteListsByMovie: [MovieID: Set<FavoriteListID>]
+    private let favoriteListsByMovieSubject: CurrentValueSubject<[MovieID: Set<FavoriteListID>], Never>
+    public var favoriteListsByMovieSequence: any AsyncSequence<[MovieID: Set<FavoriteListID>], Never> {
+        favoriteListsByMovieSubject.values
     }
 
     public init(
         favoritesByList: [FavoriteListID: [Movie]] = [:],
-        favoriteListByMovie: [MovieID: FavoriteListID] = [:]
+        favoriteListsByMovie: [MovieID: Set<FavoriteListID>] = [:]
     ) {
         self.favoritesByList = favoritesByList
-        self.favoriteListByMovie = favoriteListByMovie
+        self.favoriteListsByMovie = favoriteListsByMovie
         self.favoritesByListSubject = CurrentValueSubject(favoritesByList)
-        self.favoriteListByMovieSubject = CurrentValueSubject(favoriteListByMovie)
+        self.favoriteListsByMovieSubject = CurrentValueSubject(favoriteListsByMovie)
     }
 
     public func refreshFavorites(listId: FavoriteListID) async throws {}
@@ -35,21 +35,62 @@ public final class FavoritesUseCaseMock {
             movies.append(Movie(id: movie.id, title: movie.title, year: nil, posterURL: movie.posterURL))
         }
         favoritesByList[listId] = movies
-        favoriteListByMovie[movie.id] = listId
+        favoriteListsByMovie[movie.id, default: []].insert(listId)
         favoritesByListSubject.send(favoritesByList)
-        favoriteListByMovieSubject.send(favoriteListByMovie)
+        favoriteListsByMovieSubject.send(favoriteListsByMovie)
+    }
+
+    public func removeFavorite(movieId: MovieID, listId: FavoriteListID) async throws {
+        favoritesByList[listId]?.removeAll { $0.id == movieId }
+        if var memberships = favoriteListsByMovie[movieId] {
+            memberships.remove(listId)
+            favoriteListsByMovie[movieId] = memberships.isEmpty ? nil : memberships
+        }
+        favoritesByListSubject.send(favoritesByList)
+        favoriteListsByMovieSubject.send(favoriteListsByMovie)
     }
 
     public func removeFavorite(movieId: MovieID) async throws {
-        if let listId = favoriteListByMovie[movieId] {
-            favoritesByList[listId]?.removeAll { $0.id == movieId }
+        if let listIds = favoriteListsByMovie[movieId] {
+            for listId in listIds {
+                favoritesByList[listId]?.removeAll { $0.id == movieId }
+            }
         }
-        favoriteListByMovie[movieId] = nil
+        favoriteListsByMovie[movieId] = nil
         favoritesByListSubject.send(favoritesByList)
-        favoriteListByMovieSubject.send(favoriteListByMovie)
+        favoriteListsByMovieSubject.send(favoriteListsByMovie)
+    }
+
+    public func favoriteListIds(movieId: MovieID) async throws -> Set<FavoriteListID> {
+        favoriteListsByMovie[movieId] ?? []
     }
 
     public func favoriteListId(movieId: MovieID) async throws -> FavoriteListID? {
-        favoriteListByMovie[movieId]
+        if let listId = favoriteListsByMovie[movieId]?.first {
+            return listId
+        }
+        return nil
+    }
+
+    public var favoriteListByMovie: [MovieID: FavoriteListID] {
+        var map: [MovieID: FavoriteListID] = [:]
+        for (movieId, listIds) in favoriteListsByMovie {
+            if let listId = listIds.first {
+                map[movieId] = listId
+            }
+        }
+        return map
+    }
+
+    public var favoriteListByMovieSequence: any AsyncSequence<[MovieID: FavoriteListID], Never> {
+        favoriteListsByMovieSubject.values.map { map in
+            var singleMap: [MovieID: FavoriteListID] = [:]
+            for (movieId, listIds) in map {
+                if let listId = listIds.first {
+                    singleMap[movieId] = listId
+                }
+            }
+            return singleMap
+        }
     }
 }

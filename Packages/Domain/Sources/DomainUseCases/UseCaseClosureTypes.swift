@@ -7,8 +7,8 @@ public typealias FavoriteListsReader = @MainActor () -> [FavoriteList]
 public typealias FavoriteListsSequenceSource = @MainActor () -> any AsyncSequence<[FavoriteList], Never>
 public typealias FavoritesByListReader = @MainActor () -> [FavoriteListID: [Movie]]
 public typealias FavoritesByListSequenceSource = @MainActor () -> any AsyncSequence<[FavoriteListID: [Movie]], Never>
-public typealias FavoriteListByMovieReader = @MainActor () -> [MovieID: FavoriteListID]
-public typealias FavoriteListByMovieSequenceSource = @MainActor () -> any AsyncSequence<[MovieID: FavoriteListID], Never>
+public typealias FavoriteListsByMovieReader = @MainActor () -> [MovieID: Set<FavoriteListID>]
+public typealias FavoriteListsByMovieSequenceSource = @MainActor () -> any AsyncSequence<[MovieID: Set<FavoriteListID>], Never>
 public typealias SearchMoviesAction = @MainActor (String) async throws -> [Movie]
 public typealias MovieDetailsAction = @MainActor (MovieID) async throws -> MovieDetails
 public typealias LoginAction = @MainActor (String) async throws -> User
@@ -20,7 +20,8 @@ public typealias DeleteFavoriteListAction = @MainActor (FavoriteListID) async th
 public typealias RefreshFavoritesAction = @MainActor (FavoriteListID) async throws -> Void
 public typealias AddFavoriteAction = @MainActor (MovieDetails, FavoriteListID) async throws -> Void
 public typealias RemoveFavoriteAction = @MainActor (MovieID) async throws -> Void
-public typealias LookupFavoriteListAction = @MainActor (MovieID) async throws -> FavoriteListID?
+public typealias RemoveFavoriteFromListAction = @MainActor (MovieID, FavoriteListID) async throws -> Void
+public typealias LookupFavoriteListsAction = @MainActor (MovieID) async throws -> Set<FavoriteListID>
 public typealias HandleMovieDetailsFavoriteTapAction = @MainActor (MovieDetails) async throws -> HandleMovieDetailsFavoriteTapResult
 
 public enum HandleMovieDetailsFavoriteTapResult: Sendable {

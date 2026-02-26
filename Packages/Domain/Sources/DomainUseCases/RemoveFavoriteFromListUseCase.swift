@@ -3,7 +3,7 @@ import DomainModels
 import DomainRepositories
 
 @MainActor
-public struct LookupFavoriteListUseCase {
+public struct RemoveFavoriteFromListUseCase {
     private let favoritesRepository: FavoritesRepositoryProtocol
     private let profileRepository: ProfileRepositoryProtocol
 
@@ -15,8 +15,8 @@ public struct LookupFavoriteListUseCase {
         self.profileRepository = profileRepository
     }
 
-    public func favoriteListId(movieId: MovieID) async throws -> FavoriteListID? {
+    public func removeFavorite(movieId: MovieID, listId: FavoriteListID) async throws {
         let user = try requireCurrentUser(from: profileRepository)
-        return try await favoritesRepository.favoriteListIds(userId: user.id, movieId: movieId).first
+        try await favoritesRepository.removeFavorite(userId: user.id, movieId: movieId, listId: listId)
     }
 }

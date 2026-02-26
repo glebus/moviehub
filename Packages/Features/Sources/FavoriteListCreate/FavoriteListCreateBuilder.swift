@@ -1,5 +1,4 @@
 import SwiftUI
-import DomainModels
 import DomainUseCases
 import Router
 
@@ -7,24 +6,28 @@ import Router
 public struct FavoriteListCreateBuilder {
     private let createFavoriteListUseCase: CreateFavoriteListAction
     private let currentUserUseCase: CurrentUserReader
-    private let router: AppRouterProtocol
+    private let presentedSheetRouter: PresentedSheetRouter
 
     public init(
         createFavoriteListUseCase: @escaping CreateFavoriteListAction,
         currentUserUseCase: @escaping CurrentUserReader,
-        router: AppRouterProtocol
+        router: PresentedSheetRouter
     ) {
         self.createFavoriteListUseCase = createFavoriteListUseCase
         self.currentUserUseCase = currentUserUseCase
-        self.router = router
+        self.presentedSheetRouter = router
     }
 
     public func build() -> some View {
+        let coordinator = FavoriteListCreateCoordinator(presentedSheetRouter: presentedSheetRouter)
         let viewModel = FavoriteListCreateViewModel(
             createFavoriteListUseCase: createFavoriteListUseCase,
             currentUserUseCase: currentUserUseCase,
-            router: router
+            coordinator: coordinator
         )
-        return FavoriteListCreateCoordinator(viewModel: viewModel)
+        return FavoriteListCreateCoordinatorView(
+            viewModel: viewModel,
+            coordinator: coordinator
+        )
     }
 }

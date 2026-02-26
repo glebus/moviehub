@@ -23,11 +23,11 @@ public struct HandleMovieDetailsFavoriteTapUseCase {
             return .requireAuth
         }
 
-        let existingListId = try await favoritesRepository.favoriteListId(
+        let existingListIds = try await favoritesRepository.favoriteListIds(
             userId: user.id,
             movieId: movieDetails.id
         )
-        if existingListId != nil {
+        if !existingListIds.isEmpty {
             try await favoritesRepository.removeFavorite(userId: user.id, movieId: movieDetails.id)
             return .removed
         }

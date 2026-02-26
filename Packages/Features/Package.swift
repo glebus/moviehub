@@ -15,6 +15,7 @@ let package = Package(
         .library(name: "FavoriteList", targets: ["FavoriteList"]),
         .library(name: "FavoriteListDetails", targets: ["FavoriteListDetails"]),
         .library(name: "FavoriteListCreate", targets: ["FavoriteListCreate"]),
+        .library(name: "FavoriteListAddMovies", targets: ["FavoriteListAddMovies"]),
         .library(name: "FavoriteListPicker", targets: ["FavoriteListPicker"]),
         .library(name: "FavoriteListsManage", targets: ["FavoriteListsManage"]),
         .library(name: "Profile", targets: ["Profile"]),
@@ -100,6 +101,14 @@ let package = Package(
             ]
         ),
         .target(
+            name: "FavoriteListAddMovies",
+            dependencies: [
+                .product(name: "DomainModels", package: "Domain"),
+                .product(name: "DomainUseCases", package: "Domain"),
+                "Router"
+            ]
+        ),
+        .target(
             name: "FavoriteListPicker",
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
@@ -147,6 +156,7 @@ let package = Package(
                 "FavoriteList",
                 "FavoriteListDetails",
                 "FavoriteListCreate",
+                "FavoriteListAddMovies",
                 "FavoriteListPicker",
                 "FavoriteListsManage",
                 "Profile",

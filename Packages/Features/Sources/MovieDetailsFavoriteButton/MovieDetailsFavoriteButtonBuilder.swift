@@ -8,27 +8,27 @@ import DomainMocks
 public struct MovieDetailsFavoriteButtonBuilder {
     private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
-    private let favoriteListByMovieStateUseCase: FavoriteListByMovieReader
-    private let favoriteListByMovieSequenceUseCase: FavoriteListByMovieSequenceSource
+    private let favoriteListsByMovieStateUseCase: FavoriteListsByMovieReader
+    private let favoriteListsByMovieSequenceUseCase: FavoriteListsByMovieSequenceSource
     private let handleFavoriteTapUseCase: HandleMovieDetailsFavoriteTapAction
-    private let lookupFavoriteListUseCase: LookupFavoriteListAction
+    private let lookupFavoriteListsUseCase: LookupFavoriteListsAction
     private let router: AppRouterProtocol
 
     public init(
         currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
-        favoriteListByMovieStateUseCase: @escaping FavoriteListByMovieReader,
-        favoriteListByMovieSequenceUseCase: @escaping FavoriteListByMovieSequenceSource,
+        favoriteListsByMovieStateUseCase: @escaping FavoriteListsByMovieReader,
+        favoriteListsByMovieSequenceUseCase: @escaping FavoriteListsByMovieSequenceSource,
         handleFavoriteTapUseCase: @escaping HandleMovieDetailsFavoriteTapAction,
-        lookupFavoriteListUseCase: @escaping LookupFavoriteListAction,
+        lookupFavoriteListsUseCase: @escaping LookupFavoriteListsAction,
         router: AppRouterProtocol
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
-        self.favoriteListByMovieStateUseCase = favoriteListByMovieStateUseCase
-        self.favoriteListByMovieSequenceUseCase = favoriteListByMovieSequenceUseCase
+        self.favoriteListsByMovieStateUseCase = favoriteListsByMovieStateUseCase
+        self.favoriteListsByMovieSequenceUseCase = favoriteListsByMovieSequenceUseCase
         self.handleFavoriteTapUseCase = handleFavoriteTapUseCase
-        self.lookupFavoriteListUseCase = lookupFavoriteListUseCase
+        self.lookupFavoriteListsUseCase = lookupFavoriteListsUseCase
         self.router = router
     }
 
@@ -41,10 +41,10 @@ public struct MovieDetailsFavoriteButtonBuilder {
             movieDetails: movieDetails,
             currentUserUseCase: currentUserUseCase,
             currentUserSequenceUseCase: currentUserSequenceUseCase,
-            favoriteListByMovieStateUseCase: favoriteListByMovieStateUseCase,
-            favoriteListByMovieSequenceUseCase: favoriteListByMovieSequenceUseCase,
+            favoriteListsByMovieStateUseCase: favoriteListsByMovieStateUseCase,
+            favoriteListsByMovieSequenceUseCase: favoriteListsByMovieSequenceUseCase,
             handleFavoriteTapUseCase: handleFavoriteTapUseCase,
-            lookupFavoriteListUseCase: lookupFavoriteListUseCase,
+            lookupFavoriteListsUseCase: lookupFavoriteListsUseCase,
             router: router
         )
     }
@@ -60,13 +60,13 @@ public struct MovieDetailsFavoriteButtonBuilder {
         return MovieDetailsFavoriteButtonBuilder(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
-            favoriteListByMovieStateUseCase: { favoritesUseCases.favoriteListByMovie },
-            favoriteListByMovieSequenceUseCase: { favoritesUseCases.favoriteListByMovieSequence },
+            favoriteListsByMovieStateUseCase: { favoritesUseCases.favoriteListsByMovie },
+            favoriteListsByMovieSequenceUseCase: { favoritesUseCases.favoriteListsByMovieSequence },
             handleFavoriteTapUseCase: { details in
                 if session.currentUser == nil {
                     return .requireAuth
                 }
-                if try await favoritesUseCases.favoriteListId(movieId: details.id) != nil {
+                if !(try await favoritesUseCases.favoriteListIds(movieId: details.id)).isEmpty {
                     try await favoritesUseCases.removeFavorite(movieId: details.id)
                     return .removed
                 }
@@ -75,7 +75,7 @@ public struct MovieDetailsFavoriteButtonBuilder {
                 }
                 return .showPicker(details)
             },
-            lookupFavoriteListUseCase: { try await favoritesUseCases.favoriteListId(movieId: $0) },
+            lookupFavoriteListsUseCase: { try await favoritesUseCases.favoriteListIds(movieId: $0) },
             router: router
         )
     }

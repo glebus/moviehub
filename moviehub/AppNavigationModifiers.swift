@@ -8,6 +8,7 @@ import MovieDetails
 import MovieDetailsFavoriteButton
 import FavoriteListDetails
 import FavoriteListCreate
+import FavoriteListAddMovies
 import FavoriteListPicker
 import Auth
 import AuthButton
@@ -19,44 +20,12 @@ struct AppNavigationDestinationModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content.navigationDestination(for: AppDestination<AppPushDestination>.self) { destination in
-            switch destination.value {
-            case .movieDetails(let movieId):
-                MovieDetailsBuilder(
-                    movieDetailsUseCase: { movieId in
-                        try await container.movieRepository.details(id: movieId)
-                    },
-                    authButtonBuilder: authButtonBuilder,
-                    favoriteButtonBuilder: MovieDetailsFavoriteButtonBuilder(
-                        currentUserUseCase: { container.profileRepository.currentUser },
-                        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-                        favoriteListByMovieStateUseCase: { container.favoritesRepository.favoriteListByMovie },
-                        favoriteListByMovieSequenceUseCase: { container.favoritesRepository.favoriteListByMovieSequence },
-                        handleFavoriteTapUseCase: { movieDetails in
-                            try await container.handleMovieDetailsFavoriteTapUseCase.handleTap(movieDetails: movieDetails)
-                        },
-                        lookupFavoriteListUseCase: { movieId in
-                            try await container.lookupFavoriteListUseCase.favoriteListId(movieId: movieId)
-                        },
-                        router: router
-                    )
-                ).build(movieId: movieId)
-            case .favoriteListDetails(let listId):
-                FavoriteListDetailsBuilder(
-                    listId: listId,
-                    currentUserUseCase: { container.profileRepository.currentUser },
-                    currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-                    favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
-                    favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
-                    refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
-                    favoritesByListStateUseCase: { container.favoritesRepository.favoritesByList },
-                    favoritesByListSequenceUseCase: { container.favoritesRepository.favoritesByListSequence },
-                    refreshFavoritesUseCase: { listId in
-                        try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
-                    },
-                    router: router,
-                    authButtonBuilder: authButtonBuilder
-                ).build()
-            }
+            appPushDestinationView(
+                container: container,
+                router: router,
+                authButtonBuilder: authButtonBuilder,
+                destination: destination.value
+            )
         }
     }
 }
@@ -66,17 +35,32 @@ struct AppPresentationModifier: ViewModifier {
     @Bindable var router: AppRouter
 
     func body(content: Content) -> some View {
-        content.sheet(item: $router.presentedSheet) { destination in
-            switch destination.value {
+        content.sheet(item: $router.presentedSheet) { presentation in
+            let childRouter = presentation.childRouter
+            let sheetAuthButtonBuilder = AuthButtonBuilder(
+                currentUserUseCase: { container.profileRepository.currentUser },
+                currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                router: childRouter
+            )
+
+            switch presentation.destination.value {
             case .auth:
-                AuthBuilder(
-                    loginUseCase: { username in
-                        try await container.loginUseCase.login(username: username)
-                    },
-                    router: router
-                ).build()
+                PresentedSheetHost(router: childRouter) {
+                    AuthBuilder(
+                        loginUseCase: { username in
+                            try await container.loginUseCase.login(username: username)
+                        },
+                        router: childRouter
+                    ).build()
+                } destinationBuilder: { destination in
+                    appSheetPushDestinationView(
+                        destination: destination,
+                        childRouter: childRouter,
+                        authButtonBuilder: sheetAuthButtonBuilder
+                    )
+                }
             case .favoriteListPicker(let details):
-                NavigationStack {
+                PresentedSheetHost(router: childRouter) {
                     FavoriteListPickerBuilder(
                         movieDetails: details,
                         currentUserUseCase: { container.profileRepository.currentUser },
@@ -87,24 +71,122 @@ struct AppPresentationModifier: ViewModifier {
                         addFavoriteUseCase: { movie, listId in
                             try await container.addFavoriteUseCase.addFavorite(movie: movie, listId: listId)
                         },
-                        router: router,
-                        authButtonBuilder: AuthButtonBuilder(
-                            currentUserUseCase: { container.profileRepository.currentUser },
-                            currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-                            router: router
-                        )
+                        router: childRouter,
+                        authButtonBuilder: sheetAuthButtonBuilder
                     ).build()
+                } destinationBuilder: { destination in
+                    appSheetPushDestinationView(
+                        destination: destination,
+                        childRouter: childRouter,
+                        authButtonBuilder: sheetAuthButtonBuilder
+                    )
                 }
             case .favoriteListCreate:
-                FavoriteListCreateBuilder(
+                PresentedSheetHost(router: childRouter) {
+                    FavoriteListCreateBuilder(
                     createFavoriteListUseCase: { name, color in
                         try await container.createFavoriteListUseCase.create(name: name, color: color)
                     },
                     currentUserUseCase: { container.profileRepository.currentUser },
-                    router: router
+                    router: childRouter
                 ).build()
+                } destinationBuilder: { destination in
+                    appSheetPushDestinationView(
+                        destination: destination,
+                        childRouter: childRouter,
+                        authButtonBuilder: sheetAuthButtonBuilder
+                    )
+                }
             }
         }
+    }
+
+    @ViewBuilder
+    private func appSheetPushDestinationView(
+        destination: AppPushDestination,
+        childRouter: AppRouterProtocol,
+        authButtonBuilder: AuthButtonBuilder
+    ) -> some View {
+        switch destination {
+        case .favoriteListAddMovies(let request):
+            FavoriteListAddMoviesBuilder(
+                request: request,
+                searchMoviesUseCase: { query in
+                    try await container.movieRepository.search(query: query)
+                },
+                movieDetailsUseCase: { movieId in
+                    try await container.movieRepository.details(id: movieId)
+                },
+                favoritesByListStateUseCase: { container.favoritesRepository.favoritesByList },
+                favoritesByListSequenceUseCase: { container.favoritesRepository.favoritesByListSequence },
+                refreshFavoritesUseCase: { listId in
+                    try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
+                },
+                addFavoriteUseCase: { movie, listId in
+                    try await container.addFavoriteUseCase.addFavorite(movie: movie, listId: listId)
+                },
+                removeFavoriteFromListUseCase: { movieId, listId in
+                    try await container.removeFavoriteFromListUseCase.removeFavorite(movieId: movieId, listId: listId)
+                },
+                router: childRouter,
+            ).build()
+        case .movieDetails, .favoriteListDetails:
+            appPushDestinationView(
+                container: container,
+                router: childRouter,
+                authButtonBuilder: authButtonBuilder,
+                destination: destination
+            )
+        }
+    }
+}
+
+@ViewBuilder
+private func appPushDestinationView(
+    container: AppContainer,
+    router: AppRouterProtocol,
+    authButtonBuilder: AuthButtonBuilder,
+    destination: AppPushDestination
+) -> some View {
+    switch destination {
+    case .movieDetails(let movieId):
+        MovieDetailsBuilder(
+            movieDetailsUseCase: { movieId in
+                try await container.movieRepository.details(id: movieId)
+            },
+            authButtonBuilder: authButtonBuilder,
+            favoriteButtonBuilder: MovieDetailsFavoriteButtonBuilder(
+                currentUserUseCase: { container.profileRepository.currentUser },
+                currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+                favoriteListsByMovieStateUseCase: { container.favoritesRepository.favoriteListsByMovie },
+                favoriteListsByMovieSequenceUseCase: { container.favoritesRepository.favoriteListsByMovieSequence },
+                handleFavoriteTapUseCase: { movieDetails in
+                    try await container.handleMovieDetailsFavoriteTapUseCase.handleTap(movieDetails: movieDetails)
+                },
+                lookupFavoriteListsUseCase: { movieId in
+                    try await container.lookupFavoriteListsUseCase.favoriteListIds(movieId: movieId)
+                },
+                router: router
+            )
+        ).build(movieId: movieId)
+    case .favoriteListDetails(let listId):
+        FavoriteListDetailsBuilder(
+            listId: listId,
+            currentUserUseCase: { container.profileRepository.currentUser },
+            currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+            favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
+            favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
+            refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
+            favoritesByListStateUseCase: { container.favoritesRepository.favoritesByList },
+            favoritesByListSequenceUseCase: { container.favoritesRepository.favoritesByListSequence },
+            refreshFavoritesUseCase: { listId in
+                try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
+            },
+            router: router,
+            authButtonBuilder: authButtonBuilder
+        ).build()
+    case .favoriteListAddMovies:
+        EmptyView()
     }
 }
 

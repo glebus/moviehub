@@ -1,42 +1,47 @@
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
 
 @MainActor
 @Observable
 public final class FavoriteListCreateViewModel {
     public var listName: String
     public var selectedColor: FavoriteListColor
-    public var path: [FavoriteListCreateStep]
     public var errorMessage: String?
     public var isSaving: Bool
 
     private let createFavoriteListUseCase: CreateFavoriteListAction
     private let currentUserUseCase: CurrentUserReader
-    private let router: AppRouterProtocol
+    @ObservationIgnored private let coordinator: FavoriteListCreateCoordinator
 
     init(
         createFavoriteListUseCase: @escaping CreateFavoriteListAction,
         currentUserUseCase: @escaping CurrentUserReader,
-        router: AppRouterProtocol
+        coordinator: FavoriteListCreateCoordinator
     ) {
         self.createFavoriteListUseCase = createFavoriteListUseCase
         self.currentUserUseCase = currentUserUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.listName = ""
         self.selectedColor = .coral
-        self.path = []
         self.errorMessage = nil
         self.isSaving = false
     }
 
     public func nextTapped() {
-        path = [.color]
+        coordinator.showColor()
     }
 
     public func createTapped() {
         Task { await createList() }
+    }
+
+    public func closeTapped() {
+        coordinator.dismiss()
+    }
+
+    public func addMoviesTapped(list: FavoriteList) {
+        coordinator.showAddMovies(for: list)
     }
 
     func createList() async {
@@ -49,17 +54,13 @@ public final class FavoriteListCreateViewModel {
         isSaving = true
         defer { isSaving = false }
         do {
-            _ = try await createFavoriteListUseCase(
+            let createdList = try await createFavoriteListUseCase(
                 listName.trimmingCharacters(in: .whitespacesAndNewlines),
                 selectedColor
             )
-            router.dismissSheet()
+            coordinator.showCreated(createdList)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
-}
-
-public enum FavoriteListCreateStep: Hashable, Sendable {
-    case color
 }

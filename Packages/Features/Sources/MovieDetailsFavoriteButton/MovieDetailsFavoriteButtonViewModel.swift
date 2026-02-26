@@ -13,10 +13,10 @@ final class MovieDetailsFavoriteButtonViewModel {
     private let movieDetails: MovieDetails
     private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
-    private let favoriteListByMovieStateUseCase: FavoriteListByMovieReader
-    private let favoriteListByMovieSequenceUseCase: FavoriteListByMovieSequenceSource
+    private let favoriteListsByMovieStateUseCase: FavoriteListsByMovieReader
+    private let favoriteListsByMovieSequenceUseCase: FavoriteListsByMovieSequenceSource
     private let handleFavoriteTapUseCase: HandleMovieDetailsFavoriteTapAction
-    private let lookupFavoriteListUseCase: LookupFavoriteListAction
+    private let lookupFavoriteListsUseCase: LookupFavoriteListsAction
     private let router: AppRouterProtocol
 
     @ObservationIgnored nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
@@ -29,19 +29,19 @@ final class MovieDetailsFavoriteButtonViewModel {
         movieDetails: MovieDetails,
         currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
-        favoriteListByMovieStateUseCase: @escaping FavoriteListByMovieReader,
-        favoriteListByMovieSequenceUseCase: @escaping FavoriteListByMovieSequenceSource,
+        favoriteListsByMovieStateUseCase: @escaping FavoriteListsByMovieReader,
+        favoriteListsByMovieSequenceUseCase: @escaping FavoriteListsByMovieSequenceSource,
         handleFavoriteTapUseCase: @escaping HandleMovieDetailsFavoriteTapAction,
-        lookupFavoriteListUseCase: @escaping LookupFavoriteListAction,
+        lookupFavoriteListsUseCase: @escaping LookupFavoriteListsAction,
         router: AppRouterProtocol
     ) {
         self.movieDetails = movieDetails
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
-        self.favoriteListByMovieStateUseCase = favoriteListByMovieStateUseCase
-        self.favoriteListByMovieSequenceUseCase = favoriteListByMovieSequenceUseCase
+        self.favoriteListsByMovieStateUseCase = favoriteListsByMovieStateUseCase
+        self.favoriteListsByMovieSequenceUseCase = favoriteListsByMovieSequenceUseCase
         self.handleFavoriteTapUseCase = handleFavoriteTapUseCase
-        self.lookupFavoriteListUseCase = lookupFavoriteListUseCase
+        self.lookupFavoriteListsUseCase = lookupFavoriteListsUseCase
         self.router = router
         self.isEnabled = false
         self.title = "Add to favorites"
@@ -100,10 +100,10 @@ final class MovieDetailsFavoriteButtonViewModel {
 
     private func subscribeToFavoriteUpdates() {
         favoritesTask?.cancel()
-        favoritesTask = Task { [weak self, movieId = movieDetails.id, favoriteListByMovieSequenceUseCase] in
-            for await map in favoriteListByMovieSequenceUseCase() {
+        favoritesTask = Task { [weak self, movieId = movieDetails.id, favoriteListsByMovieSequenceUseCase] in
+            for await map in favoriteListsByMovieSequenceUseCase() {
                 guard !Task.isCancelled else { break }
-                self?.isFavorite = map[movieId] != nil
+                self?.isFavorite = !(map[movieId] ?? []).isEmpty
                 self?.updateTitle()
             }
         }
@@ -123,8 +123,8 @@ final class MovieDetailsFavoriteButtonViewModel {
         }
 
         do {
-            let listId = try await lookupFavoriteListUseCase(movieDetails.id)
-            isFavorite = listId != nil
+            let listIds = try await lookupFavoriteListsUseCase(movieDetails.id)
+            isFavorite = !listIds.isEmpty
         } catch {
             isFavorite = false
         }
