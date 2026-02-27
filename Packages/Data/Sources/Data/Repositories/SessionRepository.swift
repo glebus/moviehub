@@ -1,13 +1,12 @@
-import Combine
 import DomainModels
 import DomainRepositories
 
 @MainActor
 public final class SessionRepository: ProfileRepositoryProtocol {
     private let storage: SwiftDataStorage
-    private var currentUserSubject = CurrentValueSubject<User?, Never>(nil)
-    public var currentUserSequence: any AsyncSequence<User?, Never> { currentUserSubject.values }
-    public var currentUser: User? { currentUserSubject.value }
+    private let currentUserState = ObservableValue<User?>(nil)
+    public var currentUserSequence: any AsyncSequence<User?, Never> { currentUserState.updates }
+    public var currentUser: User? { currentUserState.value }
 
     public init(storage: SwiftDataStorage) {
         self.storage = storage
@@ -22,6 +21,6 @@ public final class SessionRepository: ProfileRepositoryProtocol {
     }
 
     public func setCurrentUser(_ user: User?) {
-        currentUserSubject.send(user)
+        currentUserState.send(user)
     }
 }
