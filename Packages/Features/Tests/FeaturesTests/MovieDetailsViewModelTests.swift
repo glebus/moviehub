@@ -21,10 +21,7 @@ struct MovieDetailsViewModelTests {
             router: router
         )
         let favoriteButtonBuilder = MovieDetailsFavoriteButtonBuilder(
-            currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
-            favoriteListsByMovieStateUseCase: { favoritesUseCases.favoriteListsByMovie },
-            favoriteListsByMovieSequenceUseCase: { favoritesUseCases.favoriteListsByMovieSequence },
             handleFavoriteTapUseCase: { details in
                 if session.currentUser == nil {
                     return .requireAuth
@@ -38,7 +35,12 @@ struct MovieDetailsViewModelTests {
                 }
                 return .showPicker(details)
             },
-            lookupFavoriteListsUseCase: { try await favoritesUseCases.favoriteListIds(movieId: $0) },
+            lookupCurrentUserFavoriteListsUseCase: { movieId in
+                guard session.currentUser != nil else {
+                    return .requireAuth
+                }
+                return .favoriteListIDs(try await favoritesUseCases.favoriteListIds(movieId: movieId))
+            },
             router: router
         )
         let repo = MovieRepositoryMock(

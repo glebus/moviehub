@@ -6,29 +6,20 @@ import DomainMocks
 
 @MainActor
 public struct MovieDetailsFavoriteButtonBuilder {
-    private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
-    private let favoriteListsByMovieStateUseCase: FavoriteListsByMovieReader
-    private let favoriteListsByMovieSequenceUseCase: FavoriteListsByMovieSequenceSource
     private let handleFavoriteTapUseCase: HandleMovieDetailsFavoriteTapAction
-    private let lookupFavoriteListsUseCase: LookupFavoriteListsAction
+    private let lookupCurrentUserFavoriteListsUseCase: LookupCurrentUserFavoriteListsAction
     private let router: AppRouterProtocol
 
     public init(
-        currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
-        favoriteListsByMovieStateUseCase: @escaping FavoriteListsByMovieReader,
-        favoriteListsByMovieSequenceUseCase: @escaping FavoriteListsByMovieSequenceSource,
         handleFavoriteTapUseCase: @escaping HandleMovieDetailsFavoriteTapAction,
-        lookupFavoriteListsUseCase: @escaping LookupFavoriteListsAction,
+        lookupCurrentUserFavoriteListsUseCase: @escaping LookupCurrentUserFavoriteListsAction,
         router: AppRouterProtocol
     ) {
-        self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
-        self.favoriteListsByMovieStateUseCase = favoriteListsByMovieStateUseCase
-        self.favoriteListsByMovieSequenceUseCase = favoriteListsByMovieSequenceUseCase
         self.handleFavoriteTapUseCase = handleFavoriteTapUseCase
-        self.lookupFavoriteListsUseCase = lookupFavoriteListsUseCase
+        self.lookupCurrentUserFavoriteListsUseCase = lookupCurrentUserFavoriteListsUseCase
         self.router = router
     }
 
@@ -37,16 +28,14 @@ public struct MovieDetailsFavoriteButtonBuilder {
     }
 
     func makeViewModel(movieDetails: MovieDetails) -> MovieDetailsFavoriteButtonViewModel {
-        MovieDetailsFavoriteButtonViewModel(
+        let viewModel = MovieDetailsFavoriteButtonViewModel(
             movieDetails: movieDetails,
-            currentUserUseCase: currentUserUseCase,
             currentUserSequenceUseCase: currentUserSequenceUseCase,
-            favoriteListsByMovieStateUseCase: favoriteListsByMovieStateUseCase,
-            favoriteListsByMovieSequenceUseCase: favoriteListsByMovieSequenceUseCase,
             handleFavoriteTapUseCase: handleFavoriteTapUseCase,
-            lookupFavoriteListsUseCase: lookupFavoriteListsUseCase,
+            lookupCurrentUserFavoriteListsUseCase: lookupCurrentUserFavoriteListsUseCase,
             router: router
         )
+        return viewModel
     }
 
     public static func preview(movieId: MovieID = MovieID("m1")) -> MovieDetailsFavoriteButtonBuilder {
@@ -58,10 +47,7 @@ public struct MovieDetailsFavoriteButtonBuilder {
         let favoritesUseCases = FavoritesUseCaseMock()
 
         return MovieDetailsFavoriteButtonBuilder(
-            currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
-            favoriteListsByMovieStateUseCase: { favoritesUseCases.favoriteListsByMovie },
-            favoriteListsByMovieSequenceUseCase: { favoritesUseCases.favoriteListsByMovieSequence },
             handleFavoriteTapUseCase: { details in
                 if session.currentUser == nil {
                     return .requireAuth
@@ -75,21 +61,13 @@ public struct MovieDetailsFavoriteButtonBuilder {
                 }
                 return .showPicker(details)
             },
-            lookupFavoriteListsUseCase: { try await favoritesUseCases.favoriteListIds(movieId: $0) },
+            lookupCurrentUserFavoriteListsUseCase: { movieId in
+                guard session.currentUser != nil else {
+                    return .requireAuth
+                }
+                return .favoriteListIDs(try await favoritesUseCases.favoriteListIds(movieId: movieId))
+            },
             router: router
         )
     }
-}
-
-#Preview {
-    let details = MovieDetails(
-        id: MovieID("m1"),
-        title: "Preview Movie",
-        posterURL: nil,
-        overview: "A preview overview for the movie details screen.",
-        genres: ["Drama", "Action"],
-        imdbURL: nil
-    )
-    let builder = MovieDetailsFavoriteButtonBuilder.preview(movieId: details.id)
-    return builder.build(movieDetails: details)
 }

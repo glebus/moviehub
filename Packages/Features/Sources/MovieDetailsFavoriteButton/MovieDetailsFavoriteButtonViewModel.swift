@@ -11,50 +11,38 @@ final class MovieDetailsFavoriteButtonViewModel {
     var errorMessage: String?
 
     private let movieDetails: MovieDetails
-    private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
-    private let favoriteListsByMovieStateUseCase: FavoriteListsByMovieReader
-    private let favoriteListsByMovieSequenceUseCase: FavoriteListsByMovieSequenceSource
     private let handleFavoriteTapUseCase: HandleMovieDetailsFavoriteTapAction
-    private let lookupFavoriteListsUseCase: LookupFavoriteListsAction
+    private let lookupCurrentUserFavoriteListsUseCase: LookupCurrentUserFavoriteListsAction
     private let router: AppRouterProtocol
 
     @ObservationIgnored nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
-    @ObservationIgnored nonisolated(unsafe) private var favoritesTask: Task<Void, Never>?
 
     private var currentUser: User?
     private var isFavorite: Bool
 
     init(
         movieDetails: MovieDetails,
-        currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
-        favoriteListsByMovieStateUseCase: @escaping FavoriteListsByMovieReader,
-        favoriteListsByMovieSequenceUseCase: @escaping FavoriteListsByMovieSequenceSource,
         handleFavoriteTapUseCase: @escaping HandleMovieDetailsFavoriteTapAction,
-        lookupFavoriteListsUseCase: @escaping LookupFavoriteListsAction,
+        lookupCurrentUserFavoriteListsUseCase: @escaping LookupCurrentUserFavoriteListsAction,
         router: AppRouterProtocol
     ) {
         self.movieDetails = movieDetails
-        self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
-        self.favoriteListsByMovieStateUseCase = favoriteListsByMovieStateUseCase
-        self.favoriteListsByMovieSequenceUseCase = favoriteListsByMovieSequenceUseCase
         self.handleFavoriteTapUseCase = handleFavoriteTapUseCase
-        self.lookupFavoriteListsUseCase = lookupFavoriteListsUseCase
+        self.lookupCurrentUserFavoriteListsUseCase = lookupCurrentUserFavoriteListsUseCase
         self.router = router
         self.isEnabled = false
         self.title = "Add to favorites"
         self.errorMessage = nil
         self.isFavorite = false
-        applySession(currentUserUseCase())
         subscribeToSession()
-        subscribeToFavoriteUpdates()
+        Task { await refreshFavoriteStatus() }
     }
 
     deinit {
         sessionTask?.cancel()
-        favoritesTask?.cancel()
     }
 
     func tapped() {
@@ -62,11 +50,6 @@ final class MovieDetailsFavoriteButtonViewModel {
     }
 
     func toggleFavorite() async {
-        guard currentUser != nil else {
-            router.present(.auth)
-            return
-        }
-
         errorMessage = nil
 
         do {
@@ -98,17 +81,6 @@ final class MovieDetailsFavoriteButtonViewModel {
         }
     }
 
-    private func subscribeToFavoriteUpdates() {
-        favoritesTask?.cancel()
-        favoritesTask = Task { [weak self, movieId = movieDetails.id, favoriteListsByMovieSequenceUseCase] in
-            for await map in favoriteListsByMovieSequenceUseCase() {
-                guard !Task.isCancelled else { break }
-                self?.isFavorite = !(map[movieId] ?? []).isEmpty
-                self?.updateTitle()
-            }
-        }
-    }
-
     private func applySession(_ user: User?) {
         currentUser = user
         updateEnabled()
@@ -116,15 +88,16 @@ final class MovieDetailsFavoriteButtonViewModel {
     }
 
     private func refreshFavoriteStatus() async {
-        guard currentUser != nil else {
-            isFavorite = false
-            updateTitle()
-            return
-        }
-
         do {
-            let listIds = try await lookupFavoriteListsUseCase(movieDetails.id)
-            isFavorite = !listIds.isEmpty
+            let result = try await lookupCurrentUserFavoriteListsUseCase(movieDetails.id)
+            switch result {
+            case .requireAuth:
+                isEnabled = false
+                isFavorite = false
+            case .favoriteListIDs(let listIDs):
+                isEnabled = true
+                isFavorite = !listIDs.isEmpty
+            }
         } catch {
             isFavorite = false
         }

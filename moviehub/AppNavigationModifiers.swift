@@ -156,15 +156,12 @@ private func appPushDestinationView(
             },
             authButtonBuilder: authButtonBuilder,
             favoriteButtonBuilder: MovieDetailsFavoriteButtonBuilder(
-                currentUserUseCase: { container.profileRepository.currentUser },
                 currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-                favoriteListsByMovieStateUseCase: { container.favoritesRepository.favoriteListsByMovie },
-                favoriteListsByMovieSequenceUseCase: { container.favoritesRepository.favoriteListsByMovieSequence },
                 handleFavoriteTapUseCase: { movieDetails in
                     try await container.handleMovieDetailsFavoriteTapUseCase.handleTap(movieDetails: movieDetails)
                 },
-                lookupFavoriteListsUseCase: { movieId in
-                    try await container.lookupFavoriteListsUseCase.favoriteListIds(movieId: movieId)
+                lookupCurrentUserFavoriteListsUseCase: { movieId in
+                    try await container.lookupCurrentUserFavoriteListsUseCase.favoriteListIds(movieId: movieId)
                 },
                 router: router
             )

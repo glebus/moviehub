@@ -19,7 +19,7 @@ final class AppContainer {
     let addFavoriteUseCase: AddFavoriteUseCase
     let removeFavoriteUseCase: RemoveFavoriteUseCase
     let removeFavoriteFromListUseCase: RemoveFavoriteFromListUseCase
-    let lookupFavoriteListsUseCase: LookupFavoriteListsUseCase
+    let lookupCurrentUserFavoriteListsUseCase: LookupCurrentUserFavoriteListsUseCase
     let handleMovieDetailsFavoriteTapUseCase: HandleMovieDetailsFavoriteTapUseCase
 
     init() {
@@ -77,9 +77,9 @@ final class AppContainer {
             favoritesRepository: favoritesRepository,
             profileRepository: profileRepository
         )
-        self.lookupFavoriteListsUseCase = LookupFavoriteListsUseCase(
-            favoritesRepository: favoritesRepository,
-            profileRepository: profileRepository
+        self.lookupCurrentUserFavoriteListsUseCase = LookupCurrentUserFavoriteListsUseCase(
+            profileRepository: profileRepository,
+            favoritesRepository: favoritesRepository
         )
         self.handleMovieDetailsFavoriteTapUseCase = HandleMovieDetailsFavoriteTapUseCase(
             profileRepository: profileRepository,
