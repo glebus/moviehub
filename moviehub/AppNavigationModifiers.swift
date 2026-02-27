@@ -117,8 +117,6 @@ struct AppPresentationModifier: ViewModifier {
                 movieDetailsUseCase: { movieId in
                     try await container.movieRepository.details(id: movieId)
                 },
-                favoritesByListStateUseCase: { container.favoritesRepository.favoritesByList },
-                favoritesByListSequenceUseCase: { container.favoritesRepository.favoritesByListSequence },
                 refreshFavoritesUseCase: { listId in
                     try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
                 },
@@ -174,8 +172,6 @@ private func appPushDestinationView(
             favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
             favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
             refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
-            favoritesByListStateUseCase: { container.favoritesRepository.favoritesByList },
-            favoritesByListSequenceUseCase: { container.favoritesRepository.favoritesByListSequence },
             refreshFavoritesUseCase: { listId in
                 try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
             },

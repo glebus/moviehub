@@ -37,13 +37,11 @@ final class AppContainer {
 
         self.loginUseCase = LoginUseCase(
             profileRepository: profileRepository,
-            favoriteListsRepository: favoriteListsRepository,
-            favoritesRepository: favoritesRepository
+            favoriteListsRepository: favoriteListsRepository
         )
         self.logoutUseCase = LogoutUseCase(
             profileRepository: profileRepository,
-            favoriteListsRepository: favoriteListsRepository,
-            favoritesRepository: favoritesRepository
+            favoriteListsRepository: favoriteListsRepository
         )
         self.refreshFavoriteListsUseCase = RefreshFavoriteListsUseCase(
             listsRepository: favoriteListsRepository,

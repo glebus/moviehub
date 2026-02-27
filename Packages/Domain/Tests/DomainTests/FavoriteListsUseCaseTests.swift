@@ -35,15 +35,13 @@ struct FavoriteListsUseCaseTests {
     func logoutClearsListsThroughRepositoryState() async throws {
         let profileRepo = ProfileRepositoryMock()
         let listsRepo = FavoriteListsRepositoryMock()
-        let favoritesRepo = FavoritesRepositoryMock()
         let refreshUseCase = RefreshFavoriteListsUseCase(
             listsRepository: listsRepo,
             profileRepository: profileRepo
         )
         let logoutUseCase = LogoutUseCase(
             profileRepository: profileRepo,
-            favoriteListsRepository: listsRepo,
-            favoritesRepository: favoritesRepo
+            favoriteListsRepository: listsRepo
         )
 
         let user = User(id: UserID("user"), username: "user")

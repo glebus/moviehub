@@ -9,11 +9,9 @@ struct SessionUseCaseTests {
     func loginSetsCurrentUser() async throws {
         let profileRepo = ProfileRepositoryMock()
         let listsRepo = FavoriteListsRepositoryMock()
-        let favoritesRepo = FavoritesRepositoryMock()
         let loginUseCase = LoginUseCase(
             profileRepository: profileRepo,
-            favoriteListsRepository: listsRepo,
-            favoritesRepository: favoritesRepo
+            favoriteListsRepository: listsRepo
         )
 
         let loggedInUser = try await loginUseCase.login(username: "  Alice  ")
@@ -25,16 +23,13 @@ struct SessionUseCaseTests {
     func logoutClearsCurrentUser() async throws {
         let profileRepo = ProfileRepositoryMock()
         let listsRepo = FavoriteListsRepositoryMock()
-        let favoritesRepo = FavoritesRepositoryMock()
         let loginUseCase = LoginUseCase(
             profileRepository: profileRepo,
-            favoriteListsRepository: listsRepo,
-            favoritesRepository: favoritesRepo
+            favoriteListsRepository: listsRepo
         )
         let logoutUseCase = LogoutUseCase(
             profileRepository: profileRepo,
-            favoriteListsRepository: listsRepo,
-            favoritesRepository: favoritesRepo
+            favoriteListsRepository: listsRepo
         )
         _ = try await loginUseCase.login(username: "Bob")
 

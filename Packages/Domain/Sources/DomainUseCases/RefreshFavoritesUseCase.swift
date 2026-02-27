@@ -15,8 +15,8 @@ public struct RefreshFavoritesUseCase {
         self.profileRepository = profileRepository
     }
 
-    public func refreshFavorites(listId: FavoriteListID) async throws {
+    public func refreshFavorites(listId: FavoriteListID) async throws -> [Movie] {
         let user = try requireCurrentUser(from: profileRepository)
-        _ = try await favoritesRepository.fetchFavorites(userId: user.id, listId: listId)
+        return try await favoritesRepository.fetchFavorites(userId: user.id, listId: listId)
     }
 }

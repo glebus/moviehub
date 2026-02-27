@@ -19,15 +19,12 @@ public final class FavoriteListDetailsViewModel {
     private let favoriteListsStateUseCase: FavoriteListsReader
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
-    private let favoritesByListStateUseCase: FavoritesByListReader
-    private let favoritesByListSequenceUseCase: FavoritesByListSequenceSource
     private let refreshFavoritesUseCase: RefreshFavoritesAction
     private let router: AppRouterProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
     @ObservationIgnored private var listsTask: Task<Void, Never>?
-    @ObservationIgnored private var favoritesTask: Task<Void, Never>?
 
     init(
         listId: FavoriteListID,
@@ -36,8 +33,6 @@ public final class FavoriteListDetailsViewModel {
         favoriteListsStateUseCase: @escaping FavoriteListsReader,
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
-        favoritesByListStateUseCase: @escaping FavoritesByListReader,
-        favoritesByListSequenceUseCase: @escaping FavoritesByListSequenceSource,
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
@@ -48,14 +43,12 @@ public final class FavoriteListDetailsViewModel {
         self.favoriteListsStateUseCase = favoriteListsStateUseCase
         self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
-        self.favoritesByListStateUseCase = favoritesByListStateUseCase
-        self.favoritesByListSequenceUseCase = favoritesByListSequenceUseCase
         self.refreshFavoritesUseCase = refreshFavoritesUseCase
         self.router = router
         self.authButtonBuilder = authButtonBuilder
         self.listName = "List"
         self.listColor = .slate
-        self.favorites = favoritesByListStateUseCase()[listId] ?? []
+        self.favorites = []
         self.errorMessage = nil
         applySession(currentUserUseCase())
         applyLists(favoriteListsStateUseCase())
@@ -64,13 +57,11 @@ public final class FavoriteListDetailsViewModel {
     deinit {
         sessionTask?.cancel()
         listsTask?.cancel()
-        favoritesTask?.cancel()
     }
 
     public func onAppear() {
         subscribeToSession()
         subscribeToLists()
-        subscribeToFavorites()
         Task {
             try? await refreshFavoriteListsUseCase()
             await refreshFavorites()
@@ -102,17 +93,6 @@ public final class FavoriteListDetailsViewModel {
         }
     }
 
-    private func subscribeToFavorites() {
-        favoritesTask?.cancel()
-        let listId = self.listId
-        favoritesTask = Task { [weak self, favoritesByListSequenceUseCase] in
-            for await favoritesByList in favoritesByListSequenceUseCase() {
-                guard !Task.isCancelled else { break }
-                self?.favorites = favoritesByList[listId] ?? []
-            }
-        }
-    }
-
     private func applySession(_ user: User?) {
         currentUser = user
         if user == nil {
@@ -129,7 +109,7 @@ public final class FavoriteListDetailsViewModel {
 
     private func refreshFavorites() async {
         do {
-            try await refreshFavoritesUseCase(listId)
+            favorites = try await refreshFavoritesUseCase(listId)
         } catch {
             errorMessage = error.localizedDescription
         }

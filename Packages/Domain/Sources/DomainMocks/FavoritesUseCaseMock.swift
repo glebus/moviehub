@@ -27,7 +27,9 @@ public final class FavoritesUseCaseMock {
         self.favoriteListsByMovieSubject = CurrentValueSubject(favoriteListsByMovie)
     }
 
-    public func refreshFavorites(listId: FavoriteListID) async throws {}
+    public func refreshFavorites(listId: FavoriteListID) async throws -> [Movie] {
+        favoritesByList[listId] ?? []
+    }
 
     public func addFavorite(movie: MovieDetails, listId: FavoriteListID) async throws {
         var movies = favoritesByList[listId] ?? []

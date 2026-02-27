@@ -16,14 +16,11 @@ public final class FavoriteListAddMoviesViewModel {
 
     private let searchMoviesUseCase: SearchMoviesAction
     private let movieDetailsUseCase: MovieDetailsAction
-    private let favoritesByListStateUseCase: FavoritesByListReader
-    private let favoritesByListSequenceUseCase: FavoritesByListSequenceSource
     private let refreshFavoritesUseCase: RefreshFavoritesAction
     private let addFavoriteUseCase: AddFavoriteAction
     private let removeFavoriteFromListUseCase: RemoveFavoriteFromListAction
     private let router: AppRouterProtocol
 
-    @ObservationIgnored private var favoritesTask: Task<Void, Never>?
     @ObservationIgnored private var didAppear = false
 
     private var favoriteMovieIds: Set<MovieID>
@@ -33,8 +30,6 @@ public final class FavoriteListAddMoviesViewModel {
         request: FavoriteListAddMoviesRequest,
         searchMoviesUseCase: @escaping SearchMoviesAction,
         movieDetailsUseCase: @escaping MovieDetailsAction,
-        favoritesByListStateUseCase: @escaping FavoritesByListReader,
-        favoritesByListSequenceUseCase: @escaping FavoritesByListSequenceSource,
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
         addFavoriteUseCase: @escaping AddFavoriteAction,
         removeFavoriteFromListUseCase: @escaping RemoveFavoriteFromListAction,
@@ -48,26 +43,19 @@ public final class FavoriteListAddMoviesViewModel {
         self.errorMessage = nil
         self.searchMoviesUseCase = searchMoviesUseCase
         self.movieDetailsUseCase = movieDetailsUseCase
-        self.favoritesByListStateUseCase = favoritesByListStateUseCase
-        self.favoritesByListSequenceUseCase = favoritesByListSequenceUseCase
         self.refreshFavoritesUseCase = refreshFavoritesUseCase
         self.addFavoriteUseCase = addFavoriteUseCase
         self.removeFavoriteFromListUseCase = removeFavoriteFromListUseCase
         self.router = router
-        self.favoriteMovieIds = Set((favoritesByListStateUseCase()[request.listId] ?? []).map(\.id))
+        self.favoriteMovieIds = []
         self.inFlightMovieIds = []
-    }
-
-    deinit {
-        favoritesTask?.cancel()
     }
 
     public func onAppear() {
         guard !didAppear else { return }
         didAppear = true
-        subscribeToFavorites()
         Task {
-            try? await refreshFavoritesUseCase(listId)
+            await refreshFavorites()
             await search()
         }
     }
@@ -94,18 +82,6 @@ public final class FavoriteListAddMoviesViewModel {
         Task { await setFavorite(movie: movie, isOn: isOn) }
     }
 
-    private func subscribeToFavorites() {
-        favoritesTask?.cancel()
-        let listId = self.listId
-        favoritesTask = Task { [weak self, favoritesByListSequenceUseCase] in
-            for await favoritesByList in favoritesByListSequenceUseCase() {
-                guard !Task.isCancelled else { break }
-                let ids = Set((favoritesByList[listId] ?? []).map(\.id))
-                self?.favoriteMovieIds = ids
-            }
-        }
-    }
-
     private func search() async {
         isSearching = true
         defer { isSearching = false }
@@ -129,6 +105,15 @@ public final class FavoriteListAddMoviesViewModel {
                 try await removeFavoriteFromListUseCase(movie.id, listId)
                 favoriteMovieIds.remove(movie.id)
             }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func refreshFavorites() async {
+        do {
+            let favorites = try await refreshFavoritesUseCase(listId)
+            favoriteMovieIds = Set(favorites.map(\.id))
         } catch {
             errorMessage = error.localizedDescription
         }

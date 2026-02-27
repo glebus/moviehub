@@ -12,8 +12,6 @@ public struct FavoriteListDetailsBuilder {
     private let favoriteListsStateUseCase: FavoriteListsReader
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
-    private let favoritesByListStateUseCase: FavoritesByListReader
-    private let favoritesByListSequenceUseCase: FavoritesByListSequenceSource
     private let refreshFavoritesUseCase: RefreshFavoritesAction
     private let router: AppRouterProtocol
     private let authButtonBuilder: AuthButtonBuilder
@@ -25,8 +23,6 @@ public struct FavoriteListDetailsBuilder {
         favoriteListsStateUseCase: @escaping FavoriteListsReader,
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
-        favoritesByListStateUseCase: @escaping FavoritesByListReader,
-        favoritesByListSequenceUseCase: @escaping FavoritesByListSequenceSource,
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
         router: AppRouterProtocol,
         authButtonBuilder: AuthButtonBuilder
@@ -37,8 +33,6 @@ public struct FavoriteListDetailsBuilder {
         self.favoriteListsStateUseCase = favoriteListsStateUseCase
         self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
-        self.favoritesByListStateUseCase = favoritesByListStateUseCase
-        self.favoritesByListSequenceUseCase = favoritesByListSequenceUseCase
         self.refreshFavoritesUseCase = refreshFavoritesUseCase
         self.router = router
         self.authButtonBuilder = authButtonBuilder
@@ -52,8 +46,6 @@ public struct FavoriteListDetailsBuilder {
             favoriteListsStateUseCase: favoriteListsStateUseCase,
             favoriteListsSequenceUseCase: favoriteListsSequenceUseCase,
             refreshFavoriteListsUseCase: refreshFavoriteListsUseCase,
-            favoritesByListStateUseCase: favoritesByListStateUseCase,
-            favoritesByListSequenceUseCase: favoritesByListSequenceUseCase,
             refreshFavoritesUseCase: refreshFavoritesUseCase,
             router: router,
             authButtonBuilder: authButtonBuilder

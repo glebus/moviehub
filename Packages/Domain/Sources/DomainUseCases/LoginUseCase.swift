@@ -6,16 +6,13 @@ import DomainRepositories
 public struct LoginUseCase {
     private let profileRepository: ProfileRepositoryProtocol
     private let favoriteListsRepository: FavoriteListsRepositoryProtocol
-    private let favoritesRepository: FavoritesRepositoryProtocol
 
     public init(
         profileRepository: ProfileRepositoryProtocol,
-        favoriteListsRepository: FavoriteListsRepositoryProtocol,
-        favoritesRepository: FavoritesRepositoryProtocol
+        favoriteListsRepository: FavoriteListsRepositoryProtocol
     ) {
         self.profileRepository = profileRepository
         self.favoriteListsRepository = favoriteListsRepository
-        self.favoritesRepository = favoritesRepository
     }
 
     public func login(username: String) async throws -> User {
@@ -29,7 +26,6 @@ public struct LoginUseCase {
 
         // Reset user-scoped caches before exposing the new session.
         favoriteListsRepository.clearLists()
-        favoritesRepository.clearCaches()
         profileRepository.setCurrentUser(user)
         _ = try await favoriteListsRepository.fetchLists(userId: user.id)
         return user
