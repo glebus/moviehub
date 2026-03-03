@@ -1,11 +1,3 @@
-# Created by https://www.toptal.com/developers/gitignore/api/swift,swiftpackagemanager
-# Edit at https://www.toptal.com/developers/gitignore?templates=swift,swiftpackagemanager
-
-### Swift ###
-# Xcode
-#
-# gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
-
 ## User settings
 xcuserdata/
 
@@ -84,10 +76,6 @@ fastlane/test_output
 # https://github.com/johnno1962/injectionforxcode
 
 iOSInjectionProject/
-
-### SwiftPackageManager ###
-xcuserdata
-*.xcodeproj
 
 # Secrets
 Secrets.xcconfig

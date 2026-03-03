@@ -74,10 +74,6 @@ private func buildPresentedRouteView(
         router: childRouter
     )
 
-    let presentedRouteBuilder: (PresentedRouteRouter) -> AnyView = { childRouter in
-        AnyView(buildPresentedRouteView(container: container, childRouter: childRouter))
-    }
-
     switch childRouter.destination {
     case .auth:
         PresentedRouteHost(router: childRouter) {
@@ -94,7 +90,7 @@ private func buildPresentedRouteView(
                 childRouter: childRouter,
                 authButtonBuilder: authButtonBuilder
             )
-        } presentedRouteBuilder: presentedRouteBuilder
+        }
     case .favoriteListPicker(let details):
         PresentedRouteHost(router: childRouter) {
             FavoriteListPickerBuilder(
@@ -117,7 +113,7 @@ private func buildPresentedRouteView(
                 childRouter: childRouter,
                 authButtonBuilder: authButtonBuilder
             )
-        } presentedRouteBuilder: presentedRouteBuilder
+        }
     case .favoriteListCreate:
         PresentedRouteHost(router: childRouter) {
             FavoriteListCreateBuilder(
@@ -134,7 +130,7 @@ private func buildPresentedRouteView(
                 childRouter: childRouter,
                 authButtonBuilder: authButtonBuilder
             )
-        } presentedRouteBuilder: presentedRouteBuilder
+        }
     }
 }
 
