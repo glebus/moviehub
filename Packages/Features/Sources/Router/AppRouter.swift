@@ -8,7 +8,7 @@ public final class AppRouter: AppRouterProtocol {
     public var homePath: [AppDestination<AppPushDestination>] = []
     public var favoritesPath: [AppDestination<AppPushDestination>] = []
     public var profilePath: [AppDestination<AppPushDestination>] = []
-    public var presentedSheet: PresentedSheetPresentation?
+    public var presentedRoute: PresentedRoutePresentation?
 
     public init() {}
 
@@ -24,10 +24,15 @@ public final class AppRouter: AppRouterProtocol {
         }
     }
 
-    public func present(_ destination: AppSheetDestination) {
-        presentedSheet = PresentedSheetPresentation(
+    public func present(_ destination: AppPresentedDestination, style: PresentationStyle = .sheet) {
+        let childRouter = PresentedRouteRouter(
+            parent: self,
+            dismissAction: { [weak self] in self?.presentedRoute = nil }
+        )
+        presentedRoute = PresentedRoutePresentation(
             destination: AppDestination(value: destination),
-            childRouter: PresentedSheetRouter(parentRouter: self)
+            style: style,
+            childRouter: childRouter
         )
     }
 
@@ -35,8 +40,8 @@ public final class AppRouter: AppRouterProtocol {
         selectedTab = tab
     }
 
-    public func dismissSheet() {
-        presentedSheet = nil
+    public func dismiss() {
+        presentedRoute = nil
     }
 
     public func pop() {
@@ -60,18 +65,25 @@ public final class AppRouter: AppRouterProtocol {
             profilePath.removeAll()
         }
     }
+
+    public var topmostRouter: any AppRouterProtocol {
+        presentedRoute?.childRouter.topmostRouter ?? self
+    }
 }
 
-public final class PresentedSheetPresentation: Identifiable {
+public final class PresentedRoutePresentation: Identifiable {
     public let id = UUID()
-    public let destination: AppDestination<AppSheetDestination>
-    public let childRouter: PresentedSheetRouter
+    public let destination: AppDestination<AppPresentedDestination>
+    public let style: PresentationStyle
+    public let childRouter: PresentedRouteRouter
 
     public init(
-        destination: AppDestination<AppSheetDestination>,
-        childRouter: PresentedSheetRouter
+        destination: AppDestination<AppPresentedDestination>,
+        style: PresentationStyle,
+        childRouter: PresentedRouteRouter
     ) {
         self.destination = destination
+        self.style = style
         self.childRouter = childRouter
     }
 }

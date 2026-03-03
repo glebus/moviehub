@@ -42,7 +42,7 @@ public final class AuthViewModel {
         do {
             _ = try await loginUseCase(trimmed)
             state = .success
-            router.dismissSheet()
+            router.dismiss()
         } catch {
             state = .error(error.localizedDescription)
         }

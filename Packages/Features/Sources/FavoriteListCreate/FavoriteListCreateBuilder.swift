@@ -6,20 +6,20 @@ import Router
 public struct FavoriteListCreateBuilder {
     private let createFavoriteListUseCase: CreateFavoriteListAction
     private let currentUserUseCase: CurrentUserReader
-    private let presentedSheetRouter: PresentedSheetRouter
+    private let presentedRouteRouter: PresentedRouteRouter
 
     public init(
         createFavoriteListUseCase: @escaping CreateFavoriteListAction,
         currentUserUseCase: @escaping CurrentUserReader,
-        router: PresentedSheetRouter
+        router: PresentedRouteRouter
     ) {
         self.createFavoriteListUseCase = createFavoriteListUseCase
         self.currentUserUseCase = currentUserUseCase
-        self.presentedSheetRouter = router
+        self.presentedRouteRouter = router
     }
 
     public func build() -> some View {
-        let coordinator = FavoriteListCreateCoordinator(presentedSheetRouter: presentedSheetRouter)
+        let coordinator = FavoriteListCreateCoordinator(presentedRouteRouter: presentedRouteRouter)
         let viewModel = FavoriteListCreateViewModel(
             createFavoriteListUseCase: createFavoriteListUseCase,
             currentUserUseCase: currentUserUseCase,

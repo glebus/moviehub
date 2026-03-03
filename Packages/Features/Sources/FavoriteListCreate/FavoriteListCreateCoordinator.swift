@@ -9,26 +9,26 @@ public final class FavoriteListCreateCoordinator {
         case created(FavoriteList)
     }
 
-    private let presentedSheetRouter: PresentedSheetRouter
+    private let presentedRouteRouter: PresentedRouteRouter
 
-    public init(presentedSheetRouter: PresentedSheetRouter) {
-        self.presentedSheetRouter = presentedSheetRouter
+    public init(presentedRouteRouter: PresentedRouteRouter) {
+        self.presentedRouteRouter = presentedRouteRouter
     }
 
     func showColor() {
-        presentedSheetRouter.appendPathValue(Destination.color)
+        presentedRouteRouter.appendPathValue(Destination.color)
     }
 
     func showCreated(_ list: FavoriteList) {
-        presentedSheetRouter.appendPathValue(Destination.created(list))
+        presentedRouteRouter.appendPathValue(Destination.created(list))
     }
 
     func dismiss() {
-        presentedSheetRouter.dismissSheet()
+        presentedRouteRouter.dismiss()
     }
 
     func showAddMovies(for list: FavoriteList) {
-        presentedSheetRouter.push(.favoriteListAddMovies(FavoriteListAddMoviesRequest(
+        presentedRouteRouter.push(.favoriteListAddMovies(FavoriteListAddMoviesRequest(
             listId: list.id,
             listName: list.name,
             initialQuery: "SpiderMan"

@@ -48,6 +48,6 @@ struct MovieDetailsFavoriteButtonViewModelTests {
 
         await viewModel.toggleFavorite()
 
-        #expect(router.lastSheetDestination == .auth)
+        #expect(router.lastPresentedDestination == .auth)
     }
 }

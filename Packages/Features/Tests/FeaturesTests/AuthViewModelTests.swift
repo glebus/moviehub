@@ -31,6 +31,6 @@ struct AuthViewModelTests {
         await viewModel.login()
 
         #expect(viewModel.state == .success)
-        #expect(router.didDismissSheet == true)
+        #expect(router.didDismiss == true)
     }
 }

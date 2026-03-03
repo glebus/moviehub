@@ -16,10 +16,15 @@ public enum AppPushDestination: Hashable, Sendable {
     case favoriteListAddMovies(FavoriteListAddMoviesRequest)
 }
 
-public enum AppSheetDestination: Hashable, Sendable {
+public enum AppPresentedDestination: Hashable, Sendable {
     case auth
     case favoriteListPicker(MovieDetails)
     case favoriteListCreate
+}
+
+public enum PresentationStyle: Sendable {
+    case sheet
+    case fullScreenCover
 }
 
 public struct FavoriteListAddMoviesRequest: Hashable, Sendable {
