@@ -99,7 +99,7 @@ private func buildPresentationCoordinatorView(
                 authButtonBuilder: authButtonBuilder
             )
         } presentationCoordinatorBuilder: { nestedCoordinator in
-            buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator)
+            AnyView(buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator))
         }
     case .favoriteListPicker(let details):
         PresentationCoordinatorHost(coordinator: childCoordinator) {
@@ -124,7 +124,7 @@ private func buildPresentationCoordinatorView(
                 authButtonBuilder: authButtonBuilder
             )
         } presentationCoordinatorBuilder: { nestedCoordinator in
-            buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator)
+            AnyView(buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator))
         }
     case .favoriteListCreate:
         PresentationCoordinatorHost(coordinator: childCoordinator) {
@@ -143,7 +143,7 @@ private func buildPresentationCoordinatorView(
                 authButtonBuilder: authButtonBuilder
             )
         } presentationCoordinatorBuilder: { nestedCoordinator in
-            buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator)
+            AnyView(buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator))
         }
     }
 }
