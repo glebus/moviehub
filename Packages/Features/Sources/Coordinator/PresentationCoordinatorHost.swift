@@ -1,21 +1,32 @@
 import SwiftUI
 
-public struct PresentationCoordinatorHost<Root: View, Destination: View>: View {
+public struct PresentationCoordinatorHost<Root: View, Destination: View, Presented: View>: View {
     @Bindable private var coordinator: PresentationCoordinator
     private let root: Root
     private let destinationBuilder: (AppPushDestination) -> Destination
-    private let presentationCoordinatorBuilder: ((PresentationCoordinator) -> AnyView)?
+    private let presentationCoordinatorBuilder: ((PresentationCoordinator) -> Presented)?
 
     public init(
         coordinator: PresentationCoordinator,
         @ViewBuilder root: () -> Root,
         @ViewBuilder destinationBuilder: @escaping (AppPushDestination) -> Destination,
-        presentationCoordinatorBuilder: ((PresentationCoordinator) -> AnyView)? = nil
+        @ViewBuilder presentationCoordinatorBuilder: @escaping (PresentationCoordinator) -> Presented
     ) {
         self.coordinator = coordinator
         self.root = root()
         self.destinationBuilder = destinationBuilder
         self.presentationCoordinatorBuilder = presentationCoordinatorBuilder
+    }
+
+    public init(
+        coordinator: PresentationCoordinator,
+        @ViewBuilder root: () -> Root,
+        @ViewBuilder destinationBuilder: @escaping (AppPushDestination) -> Destination
+    ) where Presented == EmptyView {
+        self.coordinator = coordinator
+        self.root = root()
+        self.destinationBuilder = destinationBuilder
+        self.presentationCoordinatorBuilder = nil
     }
 
     public var body: some View {
@@ -32,9 +43,9 @@ public struct PresentationCoordinatorHost<Root: View, Destination: View>: View {
     }
 }
 
-struct PresentationCoordinatorModifier: ViewModifier {
+struct PresentationCoordinatorModifier<Presented: View>: ViewModifier {
     @Bindable var coordinator: PresentationCoordinator
-    let coordinatorBuilder: ((PresentationCoordinator) -> AnyView)?
+    let coordinatorBuilder: ((PresentationCoordinator) -> Presented)?
 
     func body(content: Content) -> some View {
         if let coordinatorBuilder {
