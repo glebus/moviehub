@@ -33,7 +33,7 @@ struct AuthButtonViewModelTests {
 
         viewModel.tapped()
 
-        #expect(router.lastSheetDestination == .auth)
+        #expect(router.lastPresentedDestination == .auth)
     }
 
     @Test

@@ -8,7 +8,7 @@ public final class AppRouter: AppRouterProtocol {
     public var homePath: [AppDestination<AppPushDestination>] = []
     public var favoritesPath: [AppDestination<AppPushDestination>] = []
     public var profilePath: [AppDestination<AppPushDestination>] = []
-    public var presentedSheet: PresentedSheetPresentation?
+    public var presentedRoute: PresentedRouteRouter?
 
     public init() {}
 
@@ -24,10 +24,12 @@ public final class AppRouter: AppRouterProtocol {
         }
     }
 
-    public func present(_ destination: AppSheetDestination) {
-        presentedSheet = PresentedSheetPresentation(
-            destination: AppDestination(value: destination),
-            childRouter: PresentedSheetRouter(parentRouter: self)
+    public func present(_ destination: AppPresentedDestination, style: PresentationStyle = .sheet) {
+        presentedRoute = PresentedRouteRouter(
+            destination: destination,
+            style: style,
+            parent: self,
+            dismissAction: { [weak self] in self?.presentedRoute = nil }
         )
     }
 
@@ -35,8 +37,8 @@ public final class AppRouter: AppRouterProtocol {
         selectedTab = tab
     }
 
-    public func dismissSheet() {
-        presentedSheet = nil
+    public func dismiss() {
+        presentedRoute = nil
     }
 
     public func pop() {
@@ -60,19 +62,9 @@ public final class AppRouter: AppRouterProtocol {
             profilePath.removeAll()
         }
     }
-}
 
-public final class PresentedSheetPresentation: Identifiable {
-    public let id = UUID()
-    public let destination: AppDestination<AppSheetDestination>
-    public let childRouter: PresentedSheetRouter
-
-    public init(
-        destination: AppDestination<AppSheetDestination>,
-        childRouter: PresentedSheetRouter
-    ) {
-        self.destination = destination
-        self.childRouter = childRouter
+    public var topmostRouter: any AppRouterProtocol {
+        presentedRoute?.topmostRouter ?? self
     }
 }
 

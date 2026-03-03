@@ -65,7 +65,7 @@ public final class FavoriteListAddMoviesViewModel {
     }
 
     public func doneTapped() {
-        router.dismissSheet()
+        router.dismiss()
     }
 
     public func isSelected(movieId: MovieID) -> Bool {

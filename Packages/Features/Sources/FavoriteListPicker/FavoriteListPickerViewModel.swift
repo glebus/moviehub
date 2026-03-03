@@ -97,7 +97,7 @@ public final class FavoriteListPickerViewModel {
 
         do {
             try await addFavoriteUseCase(movieDetails, listId)
-            router.dismissSheet()
+            router.dismiss()
         } catch {
             errorMessage = error.localizedDescription
         }
