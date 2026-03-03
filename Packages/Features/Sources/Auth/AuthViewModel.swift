@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 
 @MainActor
 @Observable
@@ -18,11 +18,11 @@ public final class AuthViewModel {
     public var state: State
 
     private let loginUseCase: LoginAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
 
-    init(loginUseCase: @escaping LoginAction, router: AppRouterProtocol) {
+    init(loginUseCase: @escaping LoginAction, coordinator: AppCoordinatorProtocol) {
         self.loginUseCase = loginUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.username = ""
         self.state = .idle
     }
@@ -42,7 +42,7 @@ public final class AuthViewModel {
         do {
             _ = try await loginUseCase(trimmed)
             state = .success
-            router.dismiss()
+            coordinator.dismiss()
         } catch {
             state = .error(error.localizedDescription)
         }

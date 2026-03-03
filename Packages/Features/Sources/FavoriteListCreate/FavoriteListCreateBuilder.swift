@@ -1,25 +1,25 @@
 import SwiftUI
 import DomainUseCases
-import Router
+import Coordinator
 
 @MainActor
 public struct FavoriteListCreateBuilder {
     private let createFavoriteListUseCase: CreateFavoriteListAction
     private let currentUserUseCase: CurrentUserReader
-    private let presentedRouteRouter: PresentedRouteRouter
+    private let presentationCoordinator: PresentationCoordinator
 
     public init(
         createFavoriteListUseCase: @escaping CreateFavoriteListAction,
         currentUserUseCase: @escaping CurrentUserReader,
-        router: PresentedRouteRouter
+        coordinator: PresentationCoordinator
     ) {
         self.createFavoriteListUseCase = createFavoriteListUseCase
         self.currentUserUseCase = currentUserUseCase
-        self.presentedRouteRouter = router
+        self.presentationCoordinator = coordinator
     }
 
     public func build() -> some View {
-        let coordinator = FavoriteListCreateCoordinator(presentedRouteRouter: presentedRouteRouter)
+        let coordinator = FavoriteListCreateCoordinator(presentationCoordinator: presentationCoordinator)
         let viewModel = FavoriteListCreateViewModel(
             createFavoriteListUseCase: createFavoriteListUseCase,
             currentUserUseCase: currentUserUseCase,

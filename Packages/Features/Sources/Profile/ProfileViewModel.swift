@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 import FavoriteListsManage
 
@@ -21,7 +21,7 @@ public final class ProfileViewModel {
     private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let logoutUseCase: LogoutAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
     public let favoriteListsManageBuilder: FavoriteListsManageBuilder
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
@@ -30,14 +30,14 @@ public final class ProfileViewModel {
         currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
         logoutUseCase: @escaping LogoutAction,
-        router: AppRouterProtocol,
+        coordinator: AppCoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder,
         favoriteListsManageBuilder: FavoriteListsManageBuilder
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
         self.logoutUseCase = logoutUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.authButtonBuilder = authButtonBuilder
         self.favoriteListsManageBuilder = favoriteListsManageBuilder
         self.state = .loggedOut

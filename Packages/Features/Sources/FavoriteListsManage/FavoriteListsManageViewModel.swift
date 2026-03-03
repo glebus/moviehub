@@ -1,7 +1,7 @@
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 
 @MainActor
 @Observable
@@ -17,7 +17,7 @@ public final class FavoriteListsManageViewModel {
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let renameFavoriteListUseCase: RenameFavoriteListAction
     private let deleteFavoriteListUseCase: DeleteFavoriteListAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
     @ObservationIgnored private var listsTask: Task<Void, Never>?
@@ -30,7 +30,7 @@ public final class FavoriteListsManageViewModel {
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         renameFavoriteListUseCase: @escaping RenameFavoriteListAction,
         deleteFavoriteListUseCase: @escaping DeleteFavoriteListAction,
-        router: AppRouterProtocol
+        coordinator: AppCoordinatorProtocol
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
@@ -39,7 +39,7 @@ public final class FavoriteListsManageViewModel {
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
         self.renameFavoriteListUseCase = renameFavoriteListUseCase
         self.deleteFavoriteListUseCase = deleteFavoriteListUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.lists = favoriteListsStateUseCase()
         self.currentUser = currentUserUseCase()
         self.errorMessage = nil
@@ -57,7 +57,7 @@ public final class FavoriteListsManageViewModel {
     }
 
     public func addTapped() {
-        router.present(.favoriteListCreate)
+        coordinator.present(.favoriteListCreate)
     }
 
     public func rename(listId: FavoriteListID, name: String) {

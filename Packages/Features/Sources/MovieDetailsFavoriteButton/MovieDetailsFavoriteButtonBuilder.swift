@@ -1,7 +1,7 @@
 import SwiftUI
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import DomainMocks
 
 @MainActor
@@ -9,18 +9,18 @@ public struct MovieDetailsFavoriteButtonBuilder {
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let handleFavoriteTapUseCase: HandleMovieDetailsFavoriteTapAction
     private let lookupCurrentUserFavoriteListsUseCase: LookupCurrentUserFavoriteListsAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
 
     public init(
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
         handleFavoriteTapUseCase: @escaping HandleMovieDetailsFavoriteTapAction,
         lookupCurrentUserFavoriteListsUseCase: @escaping LookupCurrentUserFavoriteListsAction,
-        router: AppRouterProtocol
+        coordinator: AppCoordinatorProtocol
     ) {
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
         self.handleFavoriteTapUseCase = handleFavoriteTapUseCase
         self.lookupCurrentUserFavoriteListsUseCase = lookupCurrentUserFavoriteListsUseCase
-        self.router = router
+        self.coordinator = coordinator
     }
 
     public func build(movieDetails: MovieDetails) -> some View {
@@ -33,13 +33,13 @@ public struct MovieDetailsFavoriteButtonBuilder {
             currentUserSequenceUseCase: currentUserSequenceUseCase,
             handleFavoriteTapUseCase: handleFavoriteTapUseCase,
             lookupCurrentUserFavoriteListsUseCase: lookupCurrentUserFavoriteListsUseCase,
-            router: router
+            coordinator: coordinator
         )
         return viewModel
     }
 
     public static func preview(movieId: MovieID = MovieID("m1")) -> MovieDetailsFavoriteButtonBuilder {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock(currentUser: User(id: UserID("user"), username: "user"))
         let favoriteListsUseCases = FavoriteListsUseCaseMock(lists: [
             FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date())
@@ -67,7 +67,7 @@ public struct MovieDetailsFavoriteButtonBuilder {
                 }
                 return .favoriteListIDs(try await favoritesUseCases.favoriteListIds(movieId: movieId))
             },
-            router: router
+            coordinator: coordinator
         )
     }
 }

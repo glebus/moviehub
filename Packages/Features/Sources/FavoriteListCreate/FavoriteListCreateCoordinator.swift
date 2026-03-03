@@ -1,6 +1,6 @@
 import SwiftUI
 import DomainModels
-import Router
+import Coordinator
 
 @MainActor
 public final class FavoriteListCreateCoordinator {
@@ -9,26 +9,26 @@ public final class FavoriteListCreateCoordinator {
         case created(FavoriteList)
     }
 
-    private let presentedRouteRouter: PresentedRouteRouter
+    private let presentationCoordinator: PresentationCoordinator
 
-    public init(presentedRouteRouter: PresentedRouteRouter) {
-        self.presentedRouteRouter = presentedRouteRouter
+    public init(presentationCoordinator: PresentationCoordinator) {
+        self.presentationCoordinator = presentationCoordinator
     }
 
     func showColor() {
-        presentedRouteRouter.appendPathValue(Destination.color)
+        presentationCoordinator.appendPathValue(Destination.color)
     }
 
     func showCreated(_ list: FavoriteList) {
-        presentedRouteRouter.appendPathValue(Destination.created(list))
+        presentationCoordinator.appendPathValue(Destination.created(list))
     }
 
     func dismiss() {
-        presentedRouteRouter.dismiss()
+        presentationCoordinator.dismiss()
     }
 
     func showAddMovies(for list: FavoriteList) {
-        presentedRouteRouter.push(.favoriteListAddMovies(FavoriteListAddMoviesRequest(
+        presentationCoordinator.push(.favoriteListAddMovies(FavoriteListAddMoviesRequest(
             listId: list.id,
             listName: list.name,
             initialQuery: "SpiderMan"

@@ -1,7 +1,7 @@
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 
 @MainActor
@@ -18,7 +18,7 @@ public final class FavoriteListPickerViewModel {
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let addFavoriteUseCase: AddFavoriteAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
@@ -32,7 +32,7 @@ public final class FavoriteListPickerViewModel {
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         addFavoriteUseCase: @escaping AddFavoriteAction,
-        router: AppRouterProtocol,
+        coordinator: AppCoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieDetails = movieDetails
@@ -42,7 +42,7 @@ public final class FavoriteListPickerViewModel {
         self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
         self.addFavoriteUseCase = addFavoriteUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.authButtonBuilder = authButtonBuilder
         self.lists = favoriteListsStateUseCase()
         self.currentUser = currentUserUseCase()
@@ -91,13 +91,13 @@ public final class FavoriteListPickerViewModel {
 
     private func addToList(listId: FavoriteListID) async {
         guard currentUser != nil else {
-            router.present(.auth)
+            coordinator.present(.auth)
             return
         }
 
         do {
             try await addFavoriteUseCase(movieDetails, listId)
-            router.dismiss()
+            coordinator.dismiss()
         } catch {
             errorMessage = error.localizedDescription
         }

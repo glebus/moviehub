@@ -1,7 +1,7 @@
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 
 @MainActor
 @Observable
@@ -14,7 +14,7 @@ final class MovieDetailsFavoriteButtonViewModel {
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let handleFavoriteTapUseCase: HandleMovieDetailsFavoriteTapAction
     private let lookupCurrentUserFavoriteListsUseCase: LookupCurrentUserFavoriteListsAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
 
     @ObservationIgnored nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
 
@@ -26,13 +26,13 @@ final class MovieDetailsFavoriteButtonViewModel {
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
         handleFavoriteTapUseCase: @escaping HandleMovieDetailsFavoriteTapAction,
         lookupCurrentUserFavoriteListsUseCase: @escaping LookupCurrentUserFavoriteListsAction,
-        router: AppRouterProtocol
+        coordinator: AppCoordinatorProtocol
     ) {
         self.movieDetails = movieDetails
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
         self.handleFavoriteTapUseCase = handleFavoriteTapUseCase
         self.lookupCurrentUserFavoriteListsUseCase = lookupCurrentUserFavoriteListsUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.isEnabled = false
         self.title = "Add to favorites"
         self.errorMessage = nil
@@ -57,11 +57,11 @@ final class MovieDetailsFavoriteButtonViewModel {
 
             switch result {
             case .requireAuth:
-                router.present(.auth)
+                coordinator.present(.auth)
             case .showCreateList:
-                router.present(.favoriteListCreate)
+                coordinator.present(.favoriteListCreate)
             case .showPicker(let movieDetails):
-                router.present(.favoriteListPicker(movieDetails))
+                coordinator.present(.favoriteListPicker(movieDetails))
             case .removed:
                 isFavorite = false
                 updateTitle()

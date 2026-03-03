@@ -1,37 +1,37 @@
 import SwiftUI
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 import DomainMocks
 
 @MainActor
 public struct MovieListBuilder {
     private let searchMoviesUseCase: SearchMoviesAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
         searchMoviesUseCase: @escaping SearchMoviesAction,
-        router: AppRouterProtocol,
+        coordinator: AppCoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.searchMoviesUseCase = searchMoviesUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.authButtonBuilder = authButtonBuilder
     }
 
     public func build() -> some View {
         let viewModel = MovieListViewModel(
             searchMoviesUseCase: searchMoviesUseCase,
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder
         )
         return MovieListScreen(viewModel: viewModel)
     }
 
     public static func preview() -> MovieListBuilder {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let movieRepo = MovieRepositoryMock(
             searchResults: [
                 Movie(id: MovieID("m1"), title: "The Man Who Knew Too Much", year: "1956", posterURL: nil),
@@ -41,7 +41,7 @@ public struct MovieListBuilder {
 
         return MovieListBuilder(
             searchMoviesUseCase: { query in try await movieRepo.search(query: query) },
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: AuthButtonBuilder.preview()
         )
     }

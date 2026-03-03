@@ -1,7 +1,7 @@
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 
 @MainActor
 @Observable
@@ -10,18 +10,18 @@ public final class AuthButtonViewModel {
 
     private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     private var currentUser: User?
     @ObservationIgnored private var streamTask: Task<Void, Never>?
 
     init(
         currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
-        router: AppRouterProtocol
+        coordinator: AppCoordinatorProtocol
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
-        self.router = router
+        self.coordinator = coordinator
         applySession(currentUserUseCase())
         subscribe()
     }
@@ -32,9 +32,9 @@ public final class AuthButtonViewModel {
 
     public func tapped() {
         if currentUser == nil {
-            router.present(.auth)
+            coordinator.present(.auth)
         } else {
-            router.selectTab(.profile)
+            coordinator.selectTab(.profile)
         }
     }
 

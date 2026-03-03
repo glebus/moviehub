@@ -2,7 +2,7 @@ import Observation
 
 @MainActor
 @Observable
-public final class AppRouterMock: AppRouterProtocol {
+public final class AppCoordinatorMock: AppCoordinatorProtocol {
     public private(set) var lastPushDestination: AppPushDestination?
     public private(set) var lastPresentedDestination: AppPresentedDestination?
     public private(set) var lastPresentationStyle: PresentationStyle?
@@ -38,5 +38,5 @@ public final class AppRouterMock: AppRouterProtocol {
         popToRootCount += 1
     }
 
-    public var topmostRouter: any AppRouterProtocol { self }
+    public var topmostCoordinator: any AppCoordinatorProtocol { self }
 }

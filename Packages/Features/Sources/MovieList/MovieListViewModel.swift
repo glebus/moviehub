@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 
 @MainActor
@@ -19,16 +19,16 @@ public final class MovieListViewModel {
     public var state: State
 
     private let searchMoviesUseCase: SearchMoviesAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     init(
         searchMoviesUseCase: @escaping SearchMoviesAction,
-        router: AppRouterProtocol,
+        coordinator: AppCoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.searchMoviesUseCase = searchMoviesUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.authButtonBuilder = authButtonBuilder
         self.state = .idle
     }
@@ -45,7 +45,7 @@ public final class MovieListViewModel {
     }
 
     public func select(movieId: MovieID) {
-        router.push(.movieDetails(movieId))
+        coordinator.push(.movieDetails(movieId))
     }
 
     func search() async {

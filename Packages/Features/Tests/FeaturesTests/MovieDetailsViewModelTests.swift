@@ -2,7 +2,7 @@ import Testing
 import DomainModels
 import DomainUseCases
 import DomainMocks
-import Router
+import Coordinator
 import AuthButton
 import MovieDetailsFavoriteButton
 @testable import MovieDetails
@@ -11,14 +11,14 @@ import MovieDetailsFavoriteButton
 struct MovieDetailsViewModelTests {
     @Test
     func onAppearLoadsDetails() async {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock()
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let favoritesUseCases = FavoritesUseCaseMock()
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
-            router: router
+            coordinator: coordinator
         )
         let favoriteButtonBuilder = MovieDetailsFavoriteButtonBuilder(
             currentUserSequenceUseCase: { session.currentUserSequence },
@@ -41,7 +41,7 @@ struct MovieDetailsViewModelTests {
                 }
                 return .favoriteListIDs(try await favoritesUseCases.favoriteListIds(movieId: movieId))
             },
-            router: router
+            coordinator: coordinator
         )
         let repo = MovieRepositoryMock(
             detailsResult: MovieDetails(

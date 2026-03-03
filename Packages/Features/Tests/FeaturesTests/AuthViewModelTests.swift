@@ -1,15 +1,15 @@
 import Testing
 import DomainMocks
-import Router
+import Coordinator
 @testable import Auth
 
 @MainActor
 struct AuthViewModelTests {
     @Test
     func loginWithEmptyUsernameShowsError() async {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock()
-        let viewModel = AuthViewModel(loginUseCase: { try await session.login(username: $0) }, router: router)
+        let viewModel = AuthViewModel(loginUseCase: { try await session.login(username: $0) }, coordinator: coordinator)
 
         viewModel.username = " "
         await viewModel.login()
@@ -23,14 +23,14 @@ struct AuthViewModelTests {
 
     @Test
     func loginSuccessDismissesSheet() async {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock()
-        let viewModel = AuthViewModel(loginUseCase: { try await session.login(username: $0) }, router: router)
+        let viewModel = AuthViewModel(loginUseCase: { try await session.login(username: $0) }, coordinator: coordinator)
 
         viewModel.username = "Alex"
         await viewModel.login()
 
         #expect(viewModel.state == .success)
-        #expect(router.didDismiss == true)
+        #expect(coordinator.didDismiss == true)
     }
 }

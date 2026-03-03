@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 
 @MainActor
@@ -29,7 +29,7 @@ public final class FavoriteListViewModel {
     private let favoriteListsStateUseCase: FavoriteListsReader
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored private var profileTask: Task<Void, Never>?
@@ -41,7 +41,7 @@ public final class FavoriteListViewModel {
         favoriteListsStateUseCase: @escaping FavoriteListsReader,
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
-        router: AppRouterProtocol,
+        coordinator: AppCoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.currentUserUseCase = currentUserUseCase
@@ -49,7 +49,7 @@ public final class FavoriteListViewModel {
         self.favoriteListsStateUseCase = favoriteListsStateUseCase
         self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.authButtonBuilder = authButtonBuilder
         self.lists = favoriteListsStateUseCase()
         self.currentUser = currentUserUseCase()
@@ -67,7 +67,7 @@ public final class FavoriteListViewModel {
     }
 
     public func select(listId: FavoriteListID) {
-        router.push(.favoriteListDetails(listId))
+        coordinator.push(.favoriteListDetails(listId))
     }
 
     private func subscribeToSession() {

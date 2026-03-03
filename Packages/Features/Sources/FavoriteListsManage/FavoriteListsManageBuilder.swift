@@ -1,7 +1,7 @@
 import SwiftUI
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 
 @MainActor
 public struct FavoriteListsManageBuilder {
@@ -12,7 +12,7 @@ public struct FavoriteListsManageBuilder {
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let renameFavoriteListUseCase: RenameFavoriteListAction
     private let deleteFavoriteListUseCase: DeleteFavoriteListAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
 
     public init(
         currentUserUseCase: @escaping CurrentUserReader,
@@ -22,7 +22,7 @@ public struct FavoriteListsManageBuilder {
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         renameFavoriteListUseCase: @escaping RenameFavoriteListAction,
         deleteFavoriteListUseCase: @escaping DeleteFavoriteListAction,
-        router: AppRouterProtocol
+        coordinator: AppCoordinatorProtocol
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
@@ -31,7 +31,7 @@ public struct FavoriteListsManageBuilder {
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
         self.renameFavoriteListUseCase = renameFavoriteListUseCase
         self.deleteFavoriteListUseCase = deleteFavoriteListUseCase
-        self.router = router
+        self.coordinator = coordinator
     }
 
     public func build() -> some View {
@@ -43,7 +43,7 @@ public struct FavoriteListsManageBuilder {
             refreshFavoriteListsUseCase: refreshFavoriteListsUseCase,
             renameFavoriteListUseCase: renameFavoriteListUseCase,
             deleteFavoriteListUseCase: deleteFavoriteListUseCase,
-            router: router
+            coordinator: coordinator
         )
         return FavoriteListsManageScreen(viewModel: viewModel)
     }

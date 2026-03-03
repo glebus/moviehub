@@ -1,7 +1,7 @@
 import SwiftUI
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 
 @MainActor
@@ -13,7 +13,7 @@ public struct FavoriteListDetailsBuilder {
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let refreshFavoritesUseCase: RefreshFavoritesAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
@@ -24,7 +24,7 @@ public struct FavoriteListDetailsBuilder {
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
-        router: AppRouterProtocol,
+        coordinator: AppCoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.listId = listId
@@ -34,7 +34,7 @@ public struct FavoriteListDetailsBuilder {
         self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
         self.refreshFavoritesUseCase = refreshFavoritesUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.authButtonBuilder = authButtonBuilder
     }
 
@@ -47,7 +47,7 @@ public struct FavoriteListDetailsBuilder {
             favoriteListsSequenceUseCase: favoriteListsSequenceUseCase,
             refreshFavoriteListsUseCase: refreshFavoriteListsUseCase,
             refreshFavoritesUseCase: refreshFavoritesUseCase,
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder
         )
         return FavoriteListDetailsScreen(viewModel: viewModel)

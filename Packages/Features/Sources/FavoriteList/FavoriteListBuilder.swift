@@ -1,7 +1,7 @@
 import SwiftUI
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 import DomainMocks
 
@@ -12,7 +12,7 @@ public struct FavoriteListBuilder {
     private let favoriteListsStateUseCase: FavoriteListsReader
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
@@ -21,7 +21,7 @@ public struct FavoriteListBuilder {
         favoriteListsStateUseCase: @escaping FavoriteListsReader,
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
-        router: AppRouterProtocol,
+        coordinator: AppCoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.currentUserUseCase = currentUserUseCase
@@ -29,7 +29,7 @@ public struct FavoriteListBuilder {
         self.favoriteListsStateUseCase = favoriteListsStateUseCase
         self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.authButtonBuilder = authButtonBuilder
     }
 
@@ -40,14 +40,14 @@ public struct FavoriteListBuilder {
             favoriteListsStateUseCase: favoriteListsStateUseCase,
             favoriteListsSequenceUseCase: favoriteListsSequenceUseCase,
             refreshFavoriteListsUseCase: refreshFavoriteListsUseCase,
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder
         )
         return FavoriteListScreen(viewModel: viewModel)
     }
 
     public static func preview() -> FavoriteListBuilder {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock(currentUser: User(id: UserID("user"), username: "user"))
         let favoriteListsUseCases = FavoriteListsUseCaseMock(lists: [
             FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date()),
@@ -60,7 +60,7 @@ public struct FavoriteListBuilder {
             favoriteListsStateUseCase: { favoriteListsUseCases.lists },
             favoriteListsSequenceUseCase: { favoriteListsUseCases.listsSequence },
             refreshFavoriteListsUseCase: { try await favoriteListsUseCases.refresh() },
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: AuthButtonBuilder.preview()
         )
     }

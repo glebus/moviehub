@@ -8,31 +8,31 @@ import FavoriteList
 import FavoriteListsManage
 import Profile
 import Auth
-import Router
+import Coordinator
 import AuthButton
 
 struct RootTabView: View {
     let container: AppContainer
-    @State private var router = AppRouter()
+    @State private var coordinator = AppCoordinator()
 
     var body: some View {
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { container.profileRepository.currentUser },
             currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-            router: router
+            coordinator: coordinator
         )
-        TabView(selection: $router.selectedTab) {
-            NavigationStack(path: $router.homePath) {
+        TabView(selection: $coordinator.selectedTab) {
+            NavigationStack(path: $coordinator.homePath) {
                 MovieListBuilder(
                     searchMoviesUseCase: { query in
                         try await container.movieRepository.search(query: query)
                     },
-                    router: router,
+                    coordinator: coordinator,
                     authButtonBuilder: authButtonBuilder
                 ).build()
-                .appNavigationDestination(
+                .appCoordinatorDestination(
                     container: container,
-                    router: router,
+                    coordinator: coordinator,
                     authButtonBuilder: authButtonBuilder
                 )
             }
@@ -41,19 +41,19 @@ struct RootTabView: View {
             }
             .tag(AppTab.home)
 
-            NavigationStack(path: $router.favoritesPath) {
+            NavigationStack(path: $coordinator.favoritesPath) {
                 FavoriteListBuilder(
                     currentUserUseCase: { container.profileRepository.currentUser },
                     currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
                     favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
                     favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
                     refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
-                    router: router,
+                    coordinator: coordinator,
                     authButtonBuilder: authButtonBuilder
                 ).build()
-                .appNavigationDestination(
+                .appCoordinatorDestination(
                     container: container,
-                    router: router,
+                    coordinator: coordinator,
                     authButtonBuilder: authButtonBuilder
                 )
             }
@@ -62,12 +62,12 @@ struct RootTabView: View {
             }
             .tag(AppTab.favorites)
 
-            NavigationStack(path: $router.profilePath) {
+            NavigationStack(path: $coordinator.profilePath) {
                 ProfileBuilder(
                     currentUserUseCase: { container.profileRepository.currentUser },
                     currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
                     logoutUseCase: { await container.logoutUseCase.logout() },
-                    router: router,
+                    coordinator: coordinator,
                     authButtonBuilder: authButtonBuilder,
                     favoriteListsManageBuilder: FavoriteListsManageBuilder(
                         currentUserUseCase: { container.profileRepository.currentUser },
@@ -81,12 +81,12 @@ struct RootTabView: View {
                         deleteFavoriteListUseCase: { listId in
                             try await container.deleteFavoriteListUseCase.delete(listId: listId)
                         },
-                        router: router
+                        coordinator: coordinator
                     )
                 ).build()
-                .appNavigationDestination(
+                .appCoordinatorDestination(
                     container: container,
-                    router: router,
+                    coordinator: coordinator,
                     authButtonBuilder: authButtonBuilder
                 )
             }
@@ -95,6 +95,6 @@ struct RootTabView: View {
             }
             .tag(AppTab.profile)
         }
-        .appPresentation(container: container, router: router)
+        .appCoordinatorPresentation(container: container, coordinator: coordinator)
     }
 }

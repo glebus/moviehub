@@ -3,12 +3,12 @@ import Observation
 
 @MainActor
 @Observable
-public final class AppRouter: AppRouterProtocol {
+public final class AppCoordinator: AppCoordinatorProtocol {
     public var selectedTab: AppTab = .home
     public var homePath: [AppDestination<AppPushDestination>] = []
     public var favoritesPath: [AppDestination<AppPushDestination>] = []
     public var profilePath: [AppDestination<AppPushDestination>] = []
-    public var presentedRoute: PresentedRouteRouter?
+    public var presentationCoordinator: PresentationCoordinator?
 
     public init() {}
 
@@ -25,11 +25,11 @@ public final class AppRouter: AppRouterProtocol {
     }
 
     public func present(_ destination: AppPresentedDestination, style: PresentationStyle = .sheet) {
-        presentedRoute = PresentedRouteRouter(
+        presentationCoordinator = PresentationCoordinator(
             destination: destination,
             style: style,
             parent: self,
-            dismissAction: { [weak self] in self?.presentedRoute = nil }
+            dismissAction: { [weak self] in self?.presentationCoordinator = nil }
         )
     }
 
@@ -38,7 +38,7 @@ public final class AppRouter: AppRouterProtocol {
     }
 
     public func dismiss() {
-        presentedRoute = nil
+        presentationCoordinator = nil
     }
 
     public func pop() {
@@ -63,8 +63,8 @@ public final class AppRouter: AppRouterProtocol {
         }
     }
 
-    public var topmostRouter: any AppRouterProtocol {
-        presentedRoute?.topmostRouter ?? self
+    public var topmostCoordinator: any AppCoordinatorProtocol {
+        presentationCoordinator?.topmostCoordinator ?? self
     }
 }
 

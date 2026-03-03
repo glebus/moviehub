@@ -1,7 +1,7 @@
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 
 @MainActor
 @Observable
@@ -19,7 +19,7 @@ public final class FavoriteListAddMoviesViewModel {
     private let refreshFavoritesUseCase: RefreshFavoritesAction
     private let addFavoriteUseCase: AddFavoriteAction
     private let removeFavoriteFromListUseCase: RemoveFavoriteFromListAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
 
     @ObservationIgnored private var didAppear = false
 
@@ -33,7 +33,7 @@ public final class FavoriteListAddMoviesViewModel {
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
         addFavoriteUseCase: @escaping AddFavoriteAction,
         removeFavoriteFromListUseCase: @escaping RemoveFavoriteFromListAction,
-        router: AppRouterProtocol
+        coordinator: AppCoordinatorProtocol
     ) {
         self.listId = request.listId
         self.listName = request.listName
@@ -46,7 +46,7 @@ public final class FavoriteListAddMoviesViewModel {
         self.refreshFavoritesUseCase = refreshFavoritesUseCase
         self.addFavoriteUseCase = addFavoriteUseCase
         self.removeFavoriteFromListUseCase = removeFavoriteFromListUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.favoriteMovieIds = []
         self.inFlightMovieIds = []
     }
@@ -65,7 +65,7 @@ public final class FavoriteListAddMoviesViewModel {
     }
 
     public func doneTapped() {
-        router.dismiss()
+        coordinator.dismiss()
     }
 
     public func isSelected(movieId: MovieID) -> Bool {

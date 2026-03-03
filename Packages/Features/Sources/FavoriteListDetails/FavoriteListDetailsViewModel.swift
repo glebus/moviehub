@@ -1,7 +1,7 @@
 import Observation
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 
 @MainActor
@@ -20,7 +20,7 @@ public final class FavoriteListDetailsViewModel {
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let refreshFavoritesUseCase: RefreshFavoritesAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
@@ -34,7 +34,7 @@ public final class FavoriteListDetailsViewModel {
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
-        router: AppRouterProtocol,
+        coordinator: AppCoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.listId = listId
@@ -44,7 +44,7 @@ public final class FavoriteListDetailsViewModel {
         self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
         self.refreshFavoritesUseCase = refreshFavoritesUseCase
-        self.router = router
+        self.coordinator = coordinator
         self.authButtonBuilder = authButtonBuilder
         self.listName = "List"
         self.listColor = .slate
@@ -69,7 +69,7 @@ public final class FavoriteListDetailsViewModel {
     }
 
     public func select(movieId: MovieID) {
-        router.push(.movieDetails(movieId))
+        coordinator.push(.movieDetails(movieId))
     }
 
     private func subscribeToSession() {

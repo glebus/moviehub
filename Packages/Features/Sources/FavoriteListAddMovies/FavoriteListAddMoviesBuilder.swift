@@ -1,6 +1,6 @@
 import SwiftUI
 import DomainUseCases
-import Router
+import Coordinator
 
 @MainActor
 public struct FavoriteListAddMoviesBuilder {
@@ -10,7 +10,7 @@ public struct FavoriteListAddMoviesBuilder {
     private let refreshFavoritesUseCase: RefreshFavoritesAction
     private let addFavoriteUseCase: AddFavoriteAction
     private let removeFavoriteFromListUseCase: RemoveFavoriteFromListAction
-    private let router: AppRouterProtocol
+    private let coordinator: AppCoordinatorProtocol
 
     public init(
         request: FavoriteListAddMoviesRequest,
@@ -19,7 +19,7 @@ public struct FavoriteListAddMoviesBuilder {
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
         addFavoriteUseCase: @escaping AddFavoriteAction,
         removeFavoriteFromListUseCase: @escaping RemoveFavoriteFromListAction,
-        router: AppRouterProtocol
+        coordinator: AppCoordinatorProtocol
     ) {
         self.request = request
         self.searchMoviesUseCase = searchMoviesUseCase
@@ -27,7 +27,7 @@ public struct FavoriteListAddMoviesBuilder {
         self.refreshFavoritesUseCase = refreshFavoritesUseCase
         self.addFavoriteUseCase = addFavoriteUseCase
         self.removeFavoriteFromListUseCase = removeFavoriteFromListUseCase
-        self.router = router
+        self.coordinator = coordinator
     }
 
     public func build() -> some View {
@@ -39,7 +39,7 @@ public struct FavoriteListAddMoviesBuilder {
                 refreshFavoritesUseCase: refreshFavoritesUseCase,
                 addFavoriteUseCase: addFavoriteUseCase,
                 removeFavoriteFromListUseCase: removeFavoriteFromListUseCase,
-                router: router
+                coordinator: coordinator
             )
         )
     }

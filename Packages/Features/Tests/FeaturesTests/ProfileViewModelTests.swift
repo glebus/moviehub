@@ -2,7 +2,7 @@ import Testing
 import DomainModels
 import DomainUseCases
 import DomainMocks
-import Router
+import Coordinator
 import AuthButton
 import FavoriteListsManage
 @testable import Profile
@@ -11,12 +11,12 @@ import FavoriteListsManage
 struct ProfileViewModelTests {
     @Test
     func updatesStateWhenUserLoggedIn() async {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock(currentUser: User(id: UserID("u1"), username: "alex"))
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
-            router: router
+            coordinator: coordinator
         )
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let listsManageBuilder = FavoriteListsManageBuilder(
@@ -27,13 +27,13 @@ struct ProfileViewModelTests {
             refreshFavoriteListsUseCase: { try await favoriteListsUseCases.refresh() },
             renameFavoriteListUseCase: { try await favoriteListsUseCases.rename(listId: $0, name: $1) },
             deleteFavoriteListUseCase: { try await favoriteListsUseCases.delete(listId: $0) },
-            router: router
+            coordinator: coordinator
         )
         let viewModel = ProfileViewModel(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
             logoutUseCase: { await session.logout() },
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder,
             favoriteListsManageBuilder: listsManageBuilder
         )
@@ -47,12 +47,12 @@ struct ProfileViewModelTests {
 
     @Test
     func logoutTransitionsToLoggedOut() async {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock(currentUser: User(id: UserID("u1"), username: "alex"))
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
-            router: router
+            coordinator: coordinator
         )
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let listsManageBuilder = FavoriteListsManageBuilder(
@@ -63,13 +63,13 @@ struct ProfileViewModelTests {
             refreshFavoriteListsUseCase: { try await favoriteListsUseCases.refresh() },
             renameFavoriteListUseCase: { try await favoriteListsUseCases.rename(listId: $0, name: $1) },
             deleteFavoriteListUseCase: { try await favoriteListsUseCases.delete(listId: $0) },
-            router: router
+            coordinator: coordinator
         )
         let viewModel = ProfileViewModel(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
             logoutUseCase: { await session.logout() },
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder,
             favoriteListsManageBuilder: listsManageBuilder
         )

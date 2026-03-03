@@ -21,14 +21,14 @@ let package = Package(
         .library(name: "Profile", targets: ["Profile"]),
         .library(name: "Auth", targets: ["Auth"]),
         .library(name: "AuthButton", targets: ["AuthButton"]),
-        .library(name: "Router", targets: ["Router"])
+        .library(name: "Coordinator", targets: ["Coordinator"])
     ],
     dependencies: [
         .package(path: "../Domain")
     ],
     targets: [
         .target(
-            name: "Router",
+            name: "Coordinator",
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain")
@@ -39,7 +39,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 .product(name: "DomainMocks", package: "Domain")
             ]
         ),
@@ -48,7 +48,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 "AuthButton",
                 .product(name: "DomainMocks", package: "Domain")
             ]
@@ -58,7 +58,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 "AuthButton",
                 "MovieDetailsFavoriteButton",
                 .product(name: "DomainMocks", package: "Domain")
@@ -69,7 +69,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 .product(name: "DomainMocks", package: "Domain")
             ]
         ),
@@ -78,7 +78,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 "AuthButton",
                 .product(name: "DomainMocks", package: "Domain")
             ]
@@ -88,7 +88,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 "AuthButton"
             ]
         ),
@@ -97,7 +97,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router"
+                "Coordinator"
             ]
         ),
         .target(
@@ -105,7 +105,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router"
+                "Coordinator"
             ]
         ),
         .target(
@@ -113,7 +113,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 "AuthButton"
             ]
         ),
@@ -122,7 +122,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router"
+                "Coordinator"
             ]
         ),
         .target(
@@ -130,7 +130,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 "AuthButton",
                 "FavoriteListsManage",
                 .product(name: "DomainMocks", package: "Domain")
@@ -141,7 +141,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Router",
+                "Coordinator",
                 .product(name: "DomainMocks", package: "Domain")
             ]
         ),
@@ -162,7 +162,7 @@ let package = Package(
                 "Profile",
                 "Auth",
                 "AuthButton",
-                "Router",
+                "Coordinator",
                 .product(name: "DomainMocks", package: "Domain")
             ]
         )

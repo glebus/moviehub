@@ -3,7 +3,7 @@ import Observation
 import DomainModels
 import DomainUseCases
 import Data
-import Router
+import Coordinator
 import MovieDetails
 import MovieDetailsFavoriteButton
 import FavoriteListDetails
@@ -13,16 +13,16 @@ import FavoriteListPicker
 import Auth
 import AuthButton
 
-struct AppNavigationDestinationModifier: ViewModifier {
+struct AppCoordinatorDestinationModifier: ViewModifier {
     let container: AppContainer
-    let router: AppRouter
+    let coordinator: AppCoordinator
     let authButtonBuilder: AuthButtonBuilder
 
     func body(content: Content) -> some View {
         content.navigationDestination(for: AppDestination<AppPushDestination>.self) { destination in
             appPushDestinationView(
                 container: container,
-                router: router,
+                coordinator: coordinator,
                 authButtonBuilder: authButtonBuilder,
                 destination: destination.value
             )
@@ -30,69 +30,77 @@ struct AppNavigationDestinationModifier: ViewModifier {
     }
 }
 
-struct AppPresentationModifier: ViewModifier {
+struct AppCoordinatorPresentationModifier: ViewModifier {
     let container: AppContainer
-    @Bindable var router: AppRouter
+    @Bindable var coordinator: AppCoordinator
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: sheetBinding) { childRouter in
-                buildPresentedRouteView(container: container, childRouter: childRouter)
+            .sheet(item: sheetBinding) { childCoordinator in
+                buildPresentationCoordinatorView(container: container, childCoordinator: childCoordinator)
             }
-            .fullScreenCover(item: fullScreenBinding) { childRouter in
-                buildPresentedRouteView(container: container, childRouter: childRouter)
+            .fullScreenCover(item: fullScreenBinding) { childCoordinator in
+                buildPresentationCoordinatorView(container: container, childCoordinator: childCoordinator)
             }
     }
 
-    private var sheetBinding: Binding<PresentedRouteRouter?> {
+    private var sheetBinding: Binding<PresentationCoordinator?> {
         Binding(
-            get: { router.presentedRoute?.style == .sheet ? router.presentedRoute : nil },
+            get: {
+                coordinator.presentationCoordinator?.style == .sheet
+                    ? coordinator.presentationCoordinator
+                    : nil
+            },
             set: { newValue in
-                if newValue == nil { router.presentedRoute = nil }
+                if newValue == nil { coordinator.presentationCoordinator = nil }
             }
         )
     }
 
-    private var fullScreenBinding: Binding<PresentedRouteRouter?> {
+    private var fullScreenBinding: Binding<PresentationCoordinator?> {
         Binding(
-            get: { router.presentedRoute?.style == .fullScreenCover ? router.presentedRoute : nil },
+            get: {
+                coordinator.presentationCoordinator?.style == .fullScreenCover
+                    ? coordinator.presentationCoordinator
+                    : nil
+            },
             set: { newValue in
-                if newValue == nil { router.presentedRoute = nil }
+                if newValue == nil { coordinator.presentationCoordinator = nil }
             }
         )
     }
 }
 
 @ViewBuilder
-private func buildPresentedRouteView(
+private func buildPresentationCoordinatorView(
     container: AppContainer,
-    childRouter: PresentedRouteRouter
+    childCoordinator: PresentationCoordinator
 ) -> some View {
     let authButtonBuilder = AuthButtonBuilder(
         currentUserUseCase: { container.profileRepository.currentUser },
         currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-        router: childRouter
+        coordinator: childCoordinator
     )
 
-    switch childRouter.destination {
+    switch childCoordinator.destination {
     case .auth:
-        PresentedRouteHost(router: childRouter) {
+        PresentationCoordinatorHost(coordinator: childCoordinator) {
             AuthBuilder(
                 loginUseCase: { username in
                     try await container.loginUseCase.login(username: username)
                 },
-                router: childRouter
+                coordinator: childCoordinator
             ).build()
         } destinationBuilder: { destination in
             appSheetPushDestinationView(
                 container: container,
                 destination: destination,
-                childRouter: childRouter,
+                childCoordinator: childCoordinator,
                 authButtonBuilder: authButtonBuilder
             )
         }
     case .favoriteListPicker(let details):
-        PresentedRouteHost(router: childRouter) {
+        PresentationCoordinatorHost(coordinator: childCoordinator) {
             FavoriteListPickerBuilder(
                 movieDetails: details,
                 currentUserUseCase: { container.profileRepository.currentUser },
@@ -103,31 +111,31 @@ private func buildPresentedRouteView(
                 addFavoriteUseCase: { movie, listId in
                     try await container.addFavoriteUseCase.addFavorite(movie: movie, listId: listId)
                 },
-                router: childRouter,
+                coordinator: childCoordinator,
                 authButtonBuilder: authButtonBuilder
             ).build()
         } destinationBuilder: { destination in
             appSheetPushDestinationView(
                 container: container,
                 destination: destination,
-                childRouter: childRouter,
+                childCoordinator: childCoordinator,
                 authButtonBuilder: authButtonBuilder
             )
         }
     case .favoriteListCreate:
-        PresentedRouteHost(router: childRouter) {
+        PresentationCoordinatorHost(coordinator: childCoordinator) {
             FavoriteListCreateBuilder(
                 createFavoriteListUseCase: { name, color in
                     try await container.createFavoriteListUseCase.create(name: name, color: color)
                 },
                 currentUserUseCase: { container.profileRepository.currentUser },
-                router: childRouter
+                coordinator: childCoordinator
             ).build()
         } destinationBuilder: { destination in
             appSheetPushDestinationView(
                 container: container,
                 destination: destination,
-                childRouter: childRouter,
+                childCoordinator: childCoordinator,
                 authButtonBuilder: authButtonBuilder
             )
         }
@@ -138,7 +146,7 @@ private func buildPresentedRouteView(
 private func appSheetPushDestinationView(
     container: AppContainer,
     destination: AppPushDestination,
-    childRouter: AppRouterProtocol,
+    childCoordinator: AppCoordinatorProtocol,
     authButtonBuilder: AuthButtonBuilder
 ) -> some View {
     switch destination {
@@ -160,12 +168,12 @@ private func appSheetPushDestinationView(
             removeFavoriteFromListUseCase: { movieId, listId in
                 try await container.removeFavoriteFromListUseCase.removeFavorite(movieId: movieId, listId: listId)
             },
-            router: childRouter,
+            coordinator: childCoordinator,
         ).build()
     case .movieDetails, .favoriteListDetails:
         appPushDestinationView(
             container: container,
-            router: childRouter,
+            coordinator: childCoordinator,
             authButtonBuilder: authButtonBuilder,
             destination: destination
         )
@@ -175,7 +183,7 @@ private func appSheetPushDestinationView(
 @ViewBuilder
 private func appPushDestinationView(
     container: AppContainer,
-    router: AppRouterProtocol,
+    coordinator: AppCoordinatorProtocol,
     authButtonBuilder: AuthButtonBuilder,
     destination: AppPushDestination
 ) -> some View {
@@ -194,7 +202,7 @@ private func appPushDestinationView(
                 lookupCurrentUserFavoriteListsUseCase: { movieId in
                     try await container.lookupCurrentUserFavoriteListsUseCase.favoriteListIds(movieId: movieId)
                 },
-                router: router
+                coordinator: coordinator
             )
         ).build(movieId: movieId)
     case .favoriteListDetails(let listId):
@@ -208,7 +216,7 @@ private func appPushDestinationView(
             refreshFavoritesUseCase: { listId in
                 try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
             },
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder
         ).build()
     case .favoriteListAddMovies:
@@ -217,19 +225,19 @@ private func appPushDestinationView(
 }
 
 extension View {
-    func appNavigationDestination(
+    func appCoordinatorDestination(
         container: AppContainer,
-        router: AppRouter,
+        coordinator: AppCoordinator,
         authButtonBuilder: AuthButtonBuilder
     ) -> some View {
-        modifier(AppNavigationDestinationModifier(
+        modifier(AppCoordinatorDestinationModifier(
             container: container,
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder
         ))
     }
 
-    func appPresentation(container: AppContainer, router: AppRouter) -> some View {
-        modifier(AppPresentationModifier(container: container, router: router))
+    func appCoordinatorPresentation(container: AppContainer, coordinator: AppCoordinator) -> some View {
+        modifier(AppCoordinatorPresentationModifier(container: container, coordinator: coordinator))
     }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 import DomainModels
 import DomainUseCases
-import Router
+import Coordinator
 import AuthButton
 
 public struct ProfileScreen: View {

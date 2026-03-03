@@ -1,15 +1,15 @@
 @MainActor
-public protocol AppRouterProtocol: AnyObject, Sendable {
+public protocol AppCoordinatorProtocol: AnyObject, Sendable {
     func push(_ destination: AppPushDestination)
     func present(_ destination: AppPresentedDestination, style: PresentationStyle)
     func selectTab(_ tab: AppTab)
     func dismiss()
     func pop()
     func popToRoot()
-    var topmostRouter: any AppRouterProtocol { get }
+    var topmostCoordinator: any AppCoordinatorProtocol { get }
 }
 
-extension AppRouterProtocol {
+extension AppCoordinatorProtocol {
     public func present(_ destination: AppPresentedDestination) {
         present(destination, style: .sheet)
     }

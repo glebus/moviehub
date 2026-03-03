@@ -13,7 +13,7 @@
 		925AFD212F266279001FD1FE /* MovieDetails in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD202F266279001FD1FE /* MovieDetails */; };
 		925AFD232F266279001FD1FE /* MovieList in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD222F266279001FD1FE /* MovieList */; };
 		925AFD252F266279001FD1FE /* Profile in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD242F266279001FD1FE /* Profile */; };
-		925AFD272F266279001FD1FE /* Router in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD262F266279001FD1FE /* Router */; };
+		925AFD272F266279001FD1FE /* Coordinator in Frameworks */ = {isa = PBXBuildFile; productRef = 925AFD262F266279001FD1FE /* Coordinator */; };
 		FA06008F2F572D2A003EA63B /* DomainMocks in Frameworks */ = {isa = PBXBuildFile; productRef = FA06008E2F572D2A003EA63B /* DomainMocks */; };
 		FA0600912F572D2A003EA63B /* DomainModels in Frameworks */ = {isa = PBXBuildFile; productRef = FA0600902F572D2A003EA63B /* DomainModels */; };
 		FA0600932F572D2A003EA63B /* DomainRepositories in Frameworks */ = {isa = PBXBuildFile; productRef = FA0600922F572D2A003EA63B /* DomainRepositories */; };
@@ -92,7 +92,7 @@
 				FA06009F2F572D6F003EA63B /* FavoriteListPicker in Frameworks */,
 				925AFD232F266279001FD1FE /* MovieList in Frameworks */,
 				925AFD1D2F266279001FD1FE /* Auth in Frameworks */,
-				925AFD272F266279001FD1FE /* Router in Frameworks */,
+				925AFD272F266279001FD1FE /* Coordinator in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -146,7 +146,7 @@
 				925AFD202F266279001FD1FE /* MovieDetails */,
 				925AFD222F266279001FD1FE /* MovieList */,
 				925AFD242F266279001FD1FE /* Profile */,
-				925AFD262F266279001FD1FE /* Router */,
+				925AFD262F266279001FD1FE /* Coordinator */,
 				FA06008E2F572D2A003EA63B /* DomainMocks */,
 				FA0600902F572D2A003EA63B /* DomainModels */,
 				FA0600922F572D2A003EA63B /* DomainRepositories */,
@@ -482,9 +482,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Profile;
 		};
-		925AFD262F266279001FD1FE /* Router */ = {
+		925AFD262F266279001FD1FE /* Coordinator */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Router;
+			productName = Coordinator;
 		};
 		FA06008E2F572D2A003EA63B /* DomainMocks */ = {
 			isa = XCSwiftPackageProductDependency;

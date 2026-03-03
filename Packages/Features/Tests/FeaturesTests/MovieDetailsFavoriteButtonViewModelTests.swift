@@ -1,14 +1,14 @@
 import Testing
 import DomainModels
 import DomainMocks
-import Router
+import Coordinator
 @testable import MovieDetailsFavoriteButton
 
 @MainActor
 struct MovieDetailsFavoriteButtonViewModelTests {
     @Test
     func favoriteWithoutAuthPresentsAuthSheet() async {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock(currentUser: nil)
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let favoritesUseCases = FavoritesUseCaseMock()
@@ -33,7 +33,7 @@ struct MovieDetailsFavoriteButtonViewModelTests {
                 }
                 return .favoriteListIDs(try await favoritesUseCases.favoriteListIds(movieId: movieId))
             },
-            router: router
+            coordinator: coordinator
         )
         let viewModel = builder.makeViewModel(movieDetails:
             MovieDetails(
@@ -48,6 +48,6 @@ struct MovieDetailsFavoriteButtonViewModelTests {
 
         await viewModel.toggleFavorite()
 
-        #expect(router.lastPresentedDestination == .auth)
+        #expect(coordinator.lastPresentedDestination == .auth)
     }
 }

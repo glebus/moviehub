@@ -3,7 +3,7 @@ import Testing
 import DomainModels
 import DomainUseCases
 import DomainMocks
-import Router
+import Coordinator
 import AuthButton
 @testable import FavoriteList
 
@@ -11,13 +11,13 @@ import AuthButton
 struct FavoriteListViewModelTests {
     @Test
     func idleStateWhenNoUser() async {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock(currentUser: nil)
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
-            router: router
+            coordinator: coordinator
         )
         let viewModel = FavoriteListViewModel(
             currentUserUseCase: { session.currentUser },
@@ -25,7 +25,7 @@ struct FavoriteListViewModelTests {
             favoriteListsStateUseCase: { favoriteListsUseCases.lists },
             favoriteListsSequenceUseCase: { favoriteListsUseCases.listsSequence },
             refreshFavoriteListsUseCase: { try await favoriteListsUseCases.refresh() },
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder
         )
 
@@ -37,13 +37,13 @@ struct FavoriteListViewModelTests {
 
     @Test
     func loadedStateWhenUserAndFavoritesPresent() async {
-        let router = AppRouterMock()
+        let coordinator = AppCoordinatorMock()
         let session = SessionUseCaseMock(currentUser: nil)
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },
             currentUserSequenceUseCase: { session.currentUserSequence },
-            router: router
+            coordinator: coordinator
         )
         let viewModel = FavoriteListViewModel(
             currentUserUseCase: { session.currentUser },
@@ -51,7 +51,7 @@ struct FavoriteListViewModelTests {
             favoriteListsStateUseCase: { favoriteListsUseCases.lists },
             favoriteListsSequenceUseCase: { favoriteListsUseCases.listsSequence },
             refreshFavoriteListsUseCase: { try await favoriteListsUseCases.refresh() },
-            router: router,
+            coordinator: coordinator,
             authButtonBuilder: authButtonBuilder
         )
 
