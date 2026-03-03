@@ -37,6 +37,4 @@ public final class AppRouterMock: AppRouterProtocol {
     public func popToRoot() {
         popToRootCount += 1
     }
-
-    public var topmostRouter: any AppRouterProtocol { self }
 }

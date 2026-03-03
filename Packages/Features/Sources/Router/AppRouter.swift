@@ -25,12 +25,16 @@ public final class AppRouter: AppRouterProtocol {
     }
 
     public func present(_ destination: AppPresentedDestination, style: PresentationStyle = .sheet) {
-        presentedRoute = PresentedRouteRouter(
-            destination: destination,
-            style: style,
-            parent: self,
-            dismissAction: { [weak self] in self?.presentedRoute = nil }
-        )
+        if let presentedRoute {
+            presentedRoute.present(destination, style: style)
+        } else {
+            presentedRoute = PresentedRouteRouter(
+                destination: destination,
+                style: style,
+                parent: self,
+                dismissAction: { [weak self] in self?.presentedRoute = nil }
+            )
+        }
     }
 
     public func selectTab(_ tab: AppTab) {
@@ -61,10 +65,6 @@ public final class AppRouter: AppRouterProtocol {
         case .profile:
             profilePath.removeAll()
         }
-    }
-
-    public var topmostRouter: any AppRouterProtocol {
-        presentedRoute?.topmostRouter ?? self
     }
 }
 

@@ -6,7 +6,6 @@ public protocol AppRouterProtocol: AnyObject, Sendable {
     func dismiss()
     func pop()
     func popToRoot()
-    var topmostRouter: any AppRouterProtocol { get }
 }
 
 extension AppRouterProtocol {

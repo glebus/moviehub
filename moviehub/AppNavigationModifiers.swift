@@ -90,6 +90,8 @@ private func buildPresentedRouteView(
                 childRouter: childRouter,
                 authButtonBuilder: authButtonBuilder
             )
+        } presentedRouteBuilder: { nestedRouter in
+            AnyView(buildPresentedRouteView(container: container, childRouter: nestedRouter))
         }
     case .favoriteListPicker(let details):
         PresentedRouteHost(router: childRouter) {
@@ -113,6 +115,8 @@ private func buildPresentedRouteView(
                 childRouter: childRouter,
                 authButtonBuilder: authButtonBuilder
             )
+        } presentedRouteBuilder: { nestedRouter in
+            AnyView(buildPresentedRouteView(container: container, childRouter: nestedRouter))
         }
     case .favoriteListCreate:
         PresentedRouteHost(router: childRouter) {
@@ -130,6 +134,8 @@ private func buildPresentedRouteView(
                 childRouter: childRouter,
                 authButtonBuilder: authButtonBuilder
             )
+        } presentedRouteBuilder: { nestedRouter in
+            AnyView(buildPresentedRouteView(container: container, childRouter: nestedRouter))
         }
     }
 }
