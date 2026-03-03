@@ -8,7 +8,7 @@ public final class AppRouter: AppRouterProtocol {
     public var homePath: [AppDestination<AppPushDestination>] = []
     public var favoritesPath: [AppDestination<AppPushDestination>] = []
     public var profilePath: [AppDestination<AppPushDestination>] = []
-    public var presentedRoute: PresentedRoutePresentation?
+    public var presentedRoute: PresentedRouteRouter?
 
     public init() {}
 
@@ -25,14 +25,11 @@ public final class AppRouter: AppRouterProtocol {
     }
 
     public func present(_ destination: AppPresentedDestination, style: PresentationStyle = .sheet) {
-        let childRouter = PresentedRouteRouter(
+        presentedRoute = PresentedRouteRouter(
+            destination: destination,
+            style: style,
             parent: self,
             dismissAction: { [weak self] in self?.presentedRoute = nil }
-        )
-        presentedRoute = PresentedRoutePresentation(
-            destination: AppDestination(value: destination),
-            style: style,
-            childRouter: childRouter
         )
     }
 
@@ -67,24 +64,7 @@ public final class AppRouter: AppRouterProtocol {
     }
 
     public var topmostRouter: any AppRouterProtocol {
-        presentedRoute?.childRouter.topmostRouter ?? self
-    }
-}
-
-public final class PresentedRoutePresentation: Identifiable {
-    public let id = UUID()
-    public let destination: AppDestination<AppPresentedDestination>
-    public let style: PresentationStyle
-    public let childRouter: PresentedRouteRouter
-
-    public init(
-        destination: AppDestination<AppPresentedDestination>,
-        style: PresentationStyle,
-        childRouter: PresentedRouteRouter
-    ) {
-        self.destination = destination
-        self.style = style
-        self.childRouter = childRouter
+        presentedRoute?.topmostRouter ?? self
     }
 }
 

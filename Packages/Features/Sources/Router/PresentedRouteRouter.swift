@@ -3,14 +3,24 @@ import Observation
 
 @MainActor
 @Observable
-public final class PresentedRouteRouter: AppRouterProtocol {
+public final class PresentedRouteRouter: AppRouterProtocol, Identifiable {
+    public let id = UUID()
+    public let destination: AppPresentedDestination
+    public let style: PresentationStyle
     public var path = NavigationPath()
-    public var presentedRoute: PresentedRoutePresentation?
+    public var presentedRoute: PresentedRouteRouter?
 
     @ObservationIgnored private weak var parent: (any AppRouterProtocol)?
     @ObservationIgnored private let dismissAction: @MainActor () -> Void
 
-    init(parent: any AppRouterProtocol, dismissAction: @escaping @MainActor () -> Void) {
+    init(
+        destination: AppPresentedDestination,
+        style: PresentationStyle,
+        parent: any AppRouterProtocol,
+        dismissAction: @escaping @MainActor () -> Void
+    ) {
+        self.destination = destination
+        self.style = style
         self.parent = parent
         self.dismissAction = dismissAction
     }
@@ -24,14 +34,11 @@ public final class PresentedRouteRouter: AppRouterProtocol {
     }
 
     public func present(_ destination: AppPresentedDestination, style: PresentationStyle = .sheet) {
-        let childRouter = PresentedRouteRouter(
+        presentedRoute = PresentedRouteRouter(
+            destination: destination,
+            style: style,
             parent: self,
             dismissAction: { [weak self] in self?.presentedRoute = nil }
-        )
-        presentedRoute = PresentedRoutePresentation(
-            destination: AppDestination(value: destination),
-            style: style,
-            childRouter: childRouter
         )
     }
 
@@ -53,6 +60,6 @@ public final class PresentedRouteRouter: AppRouterProtocol {
     }
 
     public var topmostRouter: any AppRouterProtocol {
-        presentedRoute?.childRouter.topmostRouter ?? self
+        presentedRoute?.topmostRouter ?? self
     }
 }

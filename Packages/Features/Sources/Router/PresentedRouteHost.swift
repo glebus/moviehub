@@ -4,13 +4,13 @@ public struct PresentedRouteHost<Root: View, Destination: View>: View {
     @Bindable private var router: PresentedRouteRouter
     private let root: Root
     private let destinationBuilder: (AppPushDestination) -> Destination
-    private let presentedRouteBuilder: ((PresentedRoutePresentation) -> AnyView)?
+    private let presentedRouteBuilder: ((PresentedRouteRouter) -> AnyView)?
 
     public init(
         router: PresentedRouteRouter,
         @ViewBuilder root: () -> Root,
         @ViewBuilder destinationBuilder: @escaping (AppPushDestination) -> Destination,
-        presentedRouteBuilder: ((PresentedRoutePresentation) -> AnyView)? = nil
+        presentedRouteBuilder: ((PresentedRouteRouter) -> AnyView)? = nil
     ) {
         self.router = router
         self.root = root()
@@ -31,23 +31,23 @@ public struct PresentedRouteHost<Root: View, Destination: View>: View {
 
 struct PresentedRouteModifier: ViewModifier {
     @Bindable var router: PresentedRouteRouter
-    let routeBuilder: ((PresentedRoutePresentation) -> AnyView)?
+    let routeBuilder: ((PresentedRouteRouter) -> AnyView)?
 
     func body(content: Content) -> some View {
         if let routeBuilder {
             content
-                .sheet(item: sheetBinding) { presentation in
-                    routeBuilder(presentation)
+                .sheet(item: sheetBinding) { childRouter in
+                    routeBuilder(childRouter)
                 }
-                .fullScreenCover(item: fullScreenBinding) { presentation in
-                    routeBuilder(presentation)
+                .fullScreenCover(item: fullScreenBinding) { childRouter in
+                    routeBuilder(childRouter)
                 }
         } else {
             content
         }
     }
 
-    private var sheetBinding: Binding<PresentedRoutePresentation?> {
+    private var sheetBinding: Binding<PresentedRouteRouter?> {
         Binding(
             get: { router.presentedRoute?.style == .sheet ? router.presentedRoute : nil },
             set: { newValue in
@@ -56,7 +56,7 @@ struct PresentedRouteModifier: ViewModifier {
         )
     }
 
-    private var fullScreenBinding: Binding<PresentedRoutePresentation?> {
+    private var fullScreenBinding: Binding<PresentedRouteRouter?> {
         Binding(
             get: { router.presentedRoute?.style == .fullScreenCover ? router.presentedRoute : nil },
             set: { newValue in

@@ -36,15 +36,15 @@ struct AppPresentationModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: sheetBinding) { presentation in
-                buildPresentedRouteView(container: container, presentation: presentation)
+            .sheet(item: sheetBinding) { childRouter in
+                buildPresentedRouteView(container: container, childRouter: childRouter)
             }
-            .fullScreenCover(item: fullScreenBinding) { presentation in
-                buildPresentedRouteView(container: container, presentation: presentation)
+            .fullScreenCover(item: fullScreenBinding) { childRouter in
+                buildPresentedRouteView(container: container, childRouter: childRouter)
             }
     }
 
-    private var sheetBinding: Binding<PresentedRoutePresentation?> {
+    private var sheetBinding: Binding<PresentedRouteRouter?> {
         Binding(
             get: { router.presentedRoute?.style == .sheet ? router.presentedRoute : nil },
             set: { newValue in
@@ -53,7 +53,7 @@ struct AppPresentationModifier: ViewModifier {
         )
     }
 
-    private var fullScreenBinding: Binding<PresentedRoutePresentation?> {
+    private var fullScreenBinding: Binding<PresentedRouteRouter?> {
         Binding(
             get: { router.presentedRoute?.style == .fullScreenCover ? router.presentedRoute : nil },
             set: { newValue in
@@ -66,20 +66,19 @@ struct AppPresentationModifier: ViewModifier {
 @ViewBuilder
 private func buildPresentedRouteView(
     container: AppContainer,
-    presentation: PresentedRoutePresentation
+    childRouter: PresentedRouteRouter
 ) -> some View {
-    let childRouter = presentation.childRouter
     let authButtonBuilder = AuthButtonBuilder(
         currentUserUseCase: { container.profileRepository.currentUser },
         currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
         router: childRouter
     )
 
-    let presentedRouteBuilder: (PresentedRoutePresentation) -> AnyView = { presentation in
-        AnyView(buildPresentedRouteView(container: container, presentation: presentation))
+    let presentedRouteBuilder: (PresentedRouteRouter) -> AnyView = { childRouter in
+        AnyView(buildPresentedRouteView(container: container, childRouter: childRouter))
     }
 
-    switch presentation.destination.value {
+    switch childRouter.destination {
     case .auth:
         PresentedRouteHost(router: childRouter) {
             AuthBuilder(
