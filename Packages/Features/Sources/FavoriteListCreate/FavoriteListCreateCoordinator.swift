@@ -9,26 +9,26 @@ public final class FavoriteListCreateCoordinator {
         case created(FavoriteList)
     }
 
-    private let presentationCoordinator: PresentationCoordinator
+    private let coordinator: FlowCoordinatorProtocol
 
-    public init(presentationCoordinator: PresentationCoordinator) {
-        self.presentationCoordinator = presentationCoordinator
+    public init(coordinator: FlowCoordinatorProtocol) {
+        self.coordinator = coordinator
     }
 
     func showColor() {
-        presentationCoordinator.appendPathValue(Destination.color)
+        coordinator.appendPathValue(Destination.color)
     }
 
     func showCreated(_ list: FavoriteList) {
-        presentationCoordinator.appendPathValue(Destination.created(list))
+        coordinator.appendPathValue(Destination.created(list))
     }
 
     func dismiss() {
-        presentationCoordinator.dismiss()
+        coordinator.dismiss()
     }
 
     func showAddMovies(for list: FavoriteList) {
-        presentationCoordinator.push(.favoriteListAddMovies(FavoriteListAddMoviesRequest(
+        coordinator.push(.favoriteListAddMovies(FavoriteListAddMoviesRequest(
             listId: list.id,
             listName: list.name,
             initialQuery: "SpiderMan"

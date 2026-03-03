@@ -6,20 +6,20 @@ import Coordinator
 public struct FavoriteListCreateBuilder {
     private let createFavoriteListUseCase: CreateFavoriteListAction
     private let currentUserUseCase: CurrentUserReader
-    private let presentationCoordinator: PresentationCoordinator
+    private let flowCoordinator: FlowCoordinatorProtocol
 
     public init(
         createFavoriteListUseCase: @escaping CreateFavoriteListAction,
         currentUserUseCase: @escaping CurrentUserReader,
-        coordinator: PresentationCoordinator
+        coordinator: FlowCoordinatorProtocol
     ) {
         self.createFavoriteListUseCase = createFavoriteListUseCase
         self.currentUserUseCase = currentUserUseCase
-        self.presentationCoordinator = coordinator
+        self.flowCoordinator = coordinator
     }
 
     public func build() -> some View {
-        let coordinator = FavoriteListCreateCoordinator(presentationCoordinator: presentationCoordinator)
+        let coordinator = FavoriteListCreateCoordinator(coordinator: flowCoordinator)
         let viewModel = FavoriteListCreateViewModel(
             createFavoriteListUseCase: createFavoriteListUseCase,
             currentUserUseCase: currentUserUseCase,

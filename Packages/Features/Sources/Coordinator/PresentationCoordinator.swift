@@ -3,7 +3,7 @@ import Observation
 
 @MainActor
 @Observable
-public final class PresentationCoordinator: AppCoordinatorProtocol, Identifiable {
+public final class PresentationCoordinator: FlowCoordinatorProtocol, Identifiable {
     public let id = UUID()
     public let destination: AppPresentedDestination
     public let style: PresentationStyle
