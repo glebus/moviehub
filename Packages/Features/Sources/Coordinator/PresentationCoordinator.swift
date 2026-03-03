@@ -29,7 +29,7 @@ public final class PresentationCoordinator: FlowCoordinatorProtocol, Identifiabl
         path.append(AppDestination(value: destination))
     }
 
-    public func appendPathValue<Value: Hashable & Sendable>(_ value: Value) {
+    public func appendPathValue<Value: Hashable>(_ value: Value) {
         path.append(value)
     }
 

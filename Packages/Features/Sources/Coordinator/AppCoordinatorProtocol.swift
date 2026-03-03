@@ -1,5 +1,5 @@
 @MainActor
-public protocol AppCoordinatorProtocol: AnyObject, Sendable {
+public protocol AppCoordinatorProtocol: AnyObject {
     func push(_ destination: AppPushDestination)
     func present(_ destination: AppPresentedDestination, style: PresentationStyle)
     func selectTab(_ tab: AppTab)

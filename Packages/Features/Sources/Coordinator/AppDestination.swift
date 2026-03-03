@@ -1,7 +1,7 @@
 import DomainModels
 import DomainUseCases
 
-public struct AppDestination<Value: Hashable & Sendable>: Identifiable, Equatable, Hashable, Sendable {
+public struct AppDestination<Value: Hashable>: Identifiable, Equatable, Hashable {
     public let value: Value
     public var id: Int { value.hashValue }
 
