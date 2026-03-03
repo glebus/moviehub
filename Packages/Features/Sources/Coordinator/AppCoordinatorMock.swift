@@ -37,6 +37,5 @@ public final class AppCoordinatorMock: AppCoordinatorProtocol {
     public func popToRoot() {
         popToRootCount += 1
     }
-
     public var topmostCoordinator: any AppCoordinatorProtocol { self }
 }

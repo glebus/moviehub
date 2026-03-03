@@ -34,12 +34,16 @@ public final class PresentationCoordinator: AppCoordinatorProtocol, Identifiable
     }
 
     public func present(_ destination: AppPresentedDestination, style: PresentationStyle = .sheet) {
-        presentationCoordinator = PresentationCoordinator(
-            destination: destination,
-            style: style,
-            parent: self,
-            dismissAction: { [weak self] in self?.presentationCoordinator = nil }
-        )
+        if let presentationCoordinator {
+            presentationCoordinator.present(destination, style: style)
+        } else {
+            presentationCoordinator = PresentationCoordinator(
+                destination: destination,
+                style: style,
+                parent: self,
+                dismissAction: { [weak self] in self?.presentationCoordinator = nil }
+            )
+        }
     }
 
     public func selectTab(_ tab: AppTab) {
@@ -58,7 +62,6 @@ public final class PresentationCoordinator: AppCoordinatorProtocol, Identifiable
     public func popToRoot() {
         path = NavigationPath()
     }
-
     public var topmostCoordinator: any AppCoordinatorProtocol {
         presentationCoordinator?.topmostCoordinator ?? self
     }
