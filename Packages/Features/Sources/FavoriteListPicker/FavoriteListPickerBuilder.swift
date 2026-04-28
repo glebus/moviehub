@@ -13,7 +13,7 @@ public struct FavoriteListPickerBuilder {
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let addFavoriteUseCase: AddFavoriteAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
@@ -24,7 +24,7 @@ public struct FavoriteListPickerBuilder {
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         addFavoriteUseCase: @escaping AddFavoriteAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieDetails = movieDetails

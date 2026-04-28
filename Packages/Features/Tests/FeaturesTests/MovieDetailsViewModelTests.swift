@@ -11,7 +11,7 @@ import MovieDetailsFavoriteButton
 struct MovieDetailsViewModelTests {
     @Test
     func onAppearLoadsDetails() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock()
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let favoritesUseCases = FavoritesUseCaseMock()

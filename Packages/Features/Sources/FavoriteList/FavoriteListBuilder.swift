@@ -12,7 +12,7 @@ public struct FavoriteListBuilder {
     private let favoriteListsStateUseCase: FavoriteListsReader
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
@@ -21,7 +21,7 @@ public struct FavoriteListBuilder {
         favoriteListsStateUseCase: @escaping FavoriteListsReader,
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.currentUserUseCase = currentUserUseCase
@@ -47,7 +47,7 @@ public struct FavoriteListBuilder {
     }
 
     public static func preview() -> FavoriteListBuilder {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock(currentUser: User(id: UserID("user"), username: "user"))
         let favoriteListsUseCases = FavoriteListsUseCaseMock(lists: [
             FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date()),

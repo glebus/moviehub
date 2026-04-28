@@ -20,7 +20,7 @@ public final class FavoriteListDetailsViewModel {
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let refreshFavoritesUseCase: RefreshFavoritesAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
@@ -34,7 +34,7 @@ public final class FavoriteListDetailsViewModel {
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.listId = listId
@@ -69,7 +69,7 @@ public final class FavoriteListDetailsViewModel {
     }
 
     public func select(movieId: MovieID) {
-        coordinator.push(.movieDetails(movieId))
+        coordinator.push(AppDestination.movieDetails(movieId))
     }
 
     private func subscribeToSession() {

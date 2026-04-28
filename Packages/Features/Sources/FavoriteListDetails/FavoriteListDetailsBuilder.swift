@@ -13,7 +13,7 @@ public struct FavoriteListDetailsBuilder {
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let refreshFavoritesUseCase: RefreshFavoritesAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
@@ -24,7 +24,7 @@ public struct FavoriteListDetailsBuilder {
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.listId = listId

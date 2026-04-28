@@ -10,14 +10,14 @@ public final class AuthButtonViewModel {
 
     private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     private var currentUser: User?
     @ObservationIgnored private var streamTask: Task<Void, Never>?
 
     init(
         currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
-        coordinator: AppCoordinatorProtocol
+        coordinator: any CoordinatorProtocol
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase

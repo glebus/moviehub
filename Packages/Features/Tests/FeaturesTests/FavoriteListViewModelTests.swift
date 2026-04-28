@@ -11,7 +11,7 @@ import AuthButton
 struct FavoriteListViewModelTests {
     @Test
     func idleStateWhenNoUser() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock(currentUser: nil)
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let authButtonBuilder = AuthButtonBuilder(
@@ -37,7 +37,7 @@ struct FavoriteListViewModelTests {
 
     @Test
     func loadedStateWhenUserAndFavoritesPresent() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock(currentUser: nil)
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let authButtonBuilder = AuthButtonBuilder(

@@ -19,12 +19,12 @@ public final class MovieListViewModel {
     public var state: State
 
     private let searchMoviesUseCase: SearchMoviesAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     init(
         searchMoviesUseCase: @escaping SearchMoviesAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.searchMoviesUseCase = searchMoviesUseCase
@@ -45,7 +45,7 @@ public final class MovieListViewModel {
     }
 
     public func select(movieId: MovieID) {
-        coordinator.push(.movieDetails(movieId))
+        coordinator.push(AppDestination.movieDetails(movieId))
     }
 
     func search() async {

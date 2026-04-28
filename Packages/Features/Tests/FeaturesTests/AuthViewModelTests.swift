@@ -7,7 +7,7 @@ import Coordinator
 struct AuthViewModelTests {
     @Test
     func loginWithEmptyUsernameShowsError() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock()
         let viewModel = AuthViewModel(loginUseCase: { try await session.login(username: $0) }, coordinator: coordinator)
 
@@ -23,7 +23,7 @@ struct AuthViewModelTests {
 
     @Test
     func loginSuccessDismissesSheet() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock()
         let viewModel = AuthViewModel(loginUseCase: { try await session.login(username: $0) }, coordinator: coordinator)
 
@@ -31,6 +31,6 @@ struct AuthViewModelTests {
         await viewModel.login()
 
         #expect(viewModel.state == .success)
-        #expect(coordinator.didDismiss == true)
+        #expect(coordinator.dismissed == true)
     }
 }

@@ -21,7 +21,7 @@ public final class ProfileViewModel {
     private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let logoutUseCase: LogoutAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
     public let favoriteListsManageBuilder: FavoriteListsManageBuilder
     @ObservationIgnored nonisolated(unsafe) private var profileTask: Task<Void, Never>?
@@ -30,7 +30,7 @@ public final class ProfileViewModel {
         currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
         logoutUseCase: @escaping LogoutAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder,
         favoriteListsManageBuilder: FavoriteListsManageBuilder
     ) {

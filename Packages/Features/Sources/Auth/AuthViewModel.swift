@@ -18,9 +18,9 @@ public final class AuthViewModel {
     public var state: State
 
     private let loginUseCase: LoginAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
 
-    init(loginUseCase: @escaping LoginAction, coordinator: AppCoordinatorProtocol) {
+    init(loginUseCase: @escaping LoginAction, coordinator: any CoordinatorProtocol) {
         self.loginUseCase = loginUseCase
         self.coordinator = coordinator
         self.username = ""
@@ -29,6 +29,10 @@ public final class AuthViewModel {
 
     public func loginTapped() {
         Task { await login() }
+    }
+
+    public func dismiss() {
+        coordinator.dismiss()
     }
 
     func login() async {

@@ -30,8 +30,7 @@ let package = Package(
         .target(
             name: "Coordinator",
             dependencies: [
-                .product(name: "DomainModels", package: "Domain"),
-                .product(name: "DomainUseCases", package: "Domain")
+                .product(name: "DomainModels", package: "Domain")
             ]
         ),
         .target(

@@ -1,30 +1,23 @@
 import DomainModels
-import DomainUseCases
 
-public struct AppDestination<Value: Hashable>: Identifiable, Equatable, Hashable {
-    public let value: Value
-    public var id: Int { value.hashValue }
-
-    public init(value: Value) {
-        self.value = value
-    }
-}
-
-public enum AppPushDestination: Hashable, Sendable {
+public enum AppDestination: Hashable, Sendable {
     case movieDetails(MovieID)
     case favoriteListDetails(FavoriteListID)
     case favoriteListAddMovies(FavoriteListAddMoviesRequest)
-}
-
-public enum AppPresentedDestination: Hashable, Sendable {
     case auth
     case favoriteListPicker(MovieDetails)
     case favoriteListCreate
 }
 
-public enum PresentationStyle: Sendable {
+public enum PresentationStyle: Hashable, Sendable {
     case sheet
     case fullScreenCover
+}
+
+public enum AppTab: Hashable, CaseIterable, Sendable {
+    case home
+    case favorites
+    case profile
 }
 
 public struct FavoriteListAddMoviesRequest: Hashable, Sendable {

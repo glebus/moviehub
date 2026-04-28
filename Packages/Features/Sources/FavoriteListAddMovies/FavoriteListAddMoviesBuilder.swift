@@ -10,7 +10,7 @@ public struct FavoriteListAddMoviesBuilder {
     private let refreshFavoritesUseCase: RefreshFavoritesAction
     private let addFavoriteUseCase: AddFavoriteAction
     private let removeFavoriteFromListUseCase: RemoveFavoriteFromListAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
 
     public init(
         request: FavoriteListAddMoviesRequest,
@@ -19,7 +19,7 @@ public struct FavoriteListAddMoviesBuilder {
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
         addFavoriteUseCase: @escaping AddFavoriteAction,
         removeFavoriteFromListUseCase: @escaping RemoveFavoriteFromListAction,
-        coordinator: AppCoordinatorProtocol
+        coordinator: any CoordinatorProtocol
     ) {
         self.request = request
         self.searchMoviesUseCase = searchMoviesUseCase

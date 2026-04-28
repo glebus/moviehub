@@ -8,7 +8,7 @@ import Coordinator
 struct MovieDetailsFavoriteButtonViewModelTests {
     @Test
     func favoriteWithoutAuthPresentsAuthSheet() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock(currentUser: nil)
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         let favoritesUseCases = FavoritesUseCaseMock()
@@ -48,6 +48,6 @@ struct MovieDetailsFavoriteButtonViewModelTests {
 
         await viewModel.toggleFavorite()
 
-        #expect(coordinator.lastPresentedDestination == .auth)
+        #expect(coordinator.presentedDestination == .auth)
     }
 }

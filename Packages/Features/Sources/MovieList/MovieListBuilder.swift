@@ -8,12 +8,12 @@ import DomainMocks
 @MainActor
 public struct MovieListBuilder {
     private let searchMoviesUseCase: SearchMoviesAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     private let authButtonBuilder: AuthButtonBuilder
 
     public init(
         searchMoviesUseCase: @escaping SearchMoviesAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.searchMoviesUseCase = searchMoviesUseCase
@@ -31,7 +31,7 @@ public struct MovieListBuilder {
     }
 
     public static func preview() -> MovieListBuilder {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let movieRepo = MovieRepositoryMock(
             searchResults: [
                 Movie(id: MovieID("m1"), title: "The Man Who Knew Too Much", year: "1956", posterURL: nil),

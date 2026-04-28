@@ -1,5 +1,4 @@
 import SwiftUI
-import Observation
 import DomainModels
 import DomainUseCases
 import Data
@@ -10,100 +9,41 @@ import FavoriteListDetails
 import FavoriteListCreate
 import FavoriteListAddMovies
 import FavoriteListPicker
+import FavoriteListsManage
 import Auth
 import AuthButton
 
-struct AppCoordinatorDestinationModifier: ViewModifier {
-    let container: AppContainer
-    let coordinator: AppCoordinator
-    let authButtonBuilder: AuthButtonBuilder
-
-    func body(content: Content) -> some View {
-        content.navigationDestination(for: AppDestination<AppPushDestination>.self) { destination in
-            appPushDestinationView(
+@MainActor
+func makeCoordinatorBuilder(container: AppContainer) -> CoordinatorBuilder {
+    { destination, coordinator in
+        switch destination {
+        case .movieDetails(let movieId):
+            AnyView(makeMovieDetailsView(
+                movieId: movieId,
                 container: container,
-                coordinator: coordinator,
-                authButtonBuilder: authButtonBuilder,
-                destination: destination.value
-            )
-        }
-    }
-}
-
-struct AppCoordinatorPresentationModifier: ViewModifier {
-    let container: AppContainer
-    @Bindable var coordinator: AppCoordinator
-
-    func body(content: Content) -> some View {
-        content
-            .sheet(item: sheetBinding) { childCoordinator in
-                buildPresentationCoordinatorView(container: container, childCoordinator: childCoordinator)
-            }
-            .fullScreenCover(item: fullScreenBinding) { childCoordinator in
-                buildPresentationCoordinatorView(container: container, childCoordinator: childCoordinator)
-            }
-    }
-
-    private var sheetBinding: Binding<PresentationCoordinator?> {
-        Binding(
-            get: {
-                coordinator.presentationCoordinator?.style == .sheet
-                    ? coordinator.presentationCoordinator
-                    : nil
-            },
-            set: { newValue in
-                if newValue == nil { coordinator.presentationCoordinator = nil }
-            }
-        )
-    }
-
-    private var fullScreenBinding: Binding<PresentationCoordinator?> {
-        Binding(
-            get: {
-                coordinator.presentationCoordinator?.style == .fullScreenCover
-                    ? coordinator.presentationCoordinator
-                    : nil
-            },
-            set: { newValue in
-                if newValue == nil { coordinator.presentationCoordinator = nil }
-            }
-        )
-    }
-}
-
-@ViewBuilder
-private func buildPresentationCoordinatorView(
-    container: AppContainer,
-    childCoordinator: PresentationCoordinator
-) -> some View {
-    let authButtonBuilder = AuthButtonBuilder(
-        currentUserUseCase: { container.profileRepository.currentUser },
-        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-        coordinator: childCoordinator
-    )
-
-    switch childCoordinator.destination {
-    case .auth:
-        PresentationCoordinatorHost(coordinator: childCoordinator) {
-            AuthBuilder(
+                coordinator: coordinator
+            ))
+        case .favoriteListDetails(let listId):
+            AnyView(makeFavoriteListDetailsView(
+                listId: listId,
+                container: container,
+                coordinator: coordinator
+            ))
+        case .favoriteListAddMovies(let request):
+            AnyView(makeFavoriteListAddMoviesView(
+                request: request,
+                container: container,
+                coordinator: coordinator
+            ))
+        case .auth:
+            AnyView(AuthBuilder(
                 loginUseCase: { username in
                     try await container.loginUseCase.login(username: username)
                 },
-                coordinator: childCoordinator
-            ).build()
-        } destinationBuilder: { destination in
-            appSheetPushDestinationView(
-                container: container,
-                destination: destination,
-                childCoordinator: childCoordinator,
-                authButtonBuilder: authButtonBuilder
-            )
-        } presentationCoordinatorBuilder: { nestedCoordinator in
-            AnyView(buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator))
-        }
-    case .favoriteListPicker(let details):
-        PresentationCoordinatorHost(coordinator: childCoordinator) {
-            FavoriteListPickerBuilder(
+                coordinator: coordinator
+            ).build())
+        case .favoriteListPicker(let details):
+            AnyView(FavoriteListPickerBuilder(
                 movieDetails: details,
                 currentUserUseCase: { container.profileRepository.currentUser },
                 currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
@@ -113,137 +53,122 @@ private func buildPresentationCoordinatorView(
                 addFavoriteUseCase: { movie, listId in
                     try await container.addFavoriteUseCase.addFavorite(movie: movie, listId: listId)
                 },
-                coordinator: childCoordinator,
-                authButtonBuilder: authButtonBuilder
-            ).build()
-        } destinationBuilder: { destination in
-            appSheetPushDestinationView(
-                container: container,
-                destination: destination,
-                childCoordinator: childCoordinator,
-                authButtonBuilder: authButtonBuilder
-            )
-        } presentationCoordinatorBuilder: { nestedCoordinator in
-            AnyView(buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator))
-        }
-    case .favoriteListCreate:
-        PresentationCoordinatorHost(coordinator: childCoordinator) {
-            FavoriteListCreateBuilder(
+                coordinator: coordinator,
+                authButtonBuilder: makeAuthButtonBuilder(container: container, coordinator: coordinator)
+            ).build())
+        case .favoriteListCreate:
+            AnyView(FavoriteListCreateBuilder(
                 createFavoriteListUseCase: { name, color in
                     try await container.createFavoriteListUseCase.create(name: name, color: color)
                 },
                 currentUserUseCase: { container.profileRepository.currentUser },
-                coordinator: childCoordinator
-            ).build()
-        } destinationBuilder: { destination in
-            appSheetPushDestinationView(
-                container: container,
-                destination: destination,
-                childCoordinator: childCoordinator,
-                authButtonBuilder: authButtonBuilder
-            )
-        } presentationCoordinatorBuilder: { nestedCoordinator in
-            AnyView(buildPresentationCoordinatorView(container: container, childCoordinator: nestedCoordinator))
+                coordinator: coordinator
+            ).build())
         }
     }
 }
 
-@ViewBuilder
-private func appSheetPushDestinationView(
+@MainActor
+func makeAuthButtonBuilder(
     container: AppContainer,
-    destination: AppPushDestination,
-    childCoordinator: AppCoordinatorProtocol,
-    authButtonBuilder: AuthButtonBuilder
-) -> some View {
-    switch destination {
-    case .favoriteListAddMovies(let request):
-        FavoriteListAddMoviesBuilder(
-            request: request,
-            searchMoviesUseCase: { query in
-                try await container.movieRepository.search(query: query)
-            },
-            movieDetailsUseCase: { movieId in
-                try await container.movieRepository.details(id: movieId)
-            },
-            refreshFavoritesUseCase: { listId in
-                try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
-            },
-            addFavoriteUseCase: { movie, listId in
-                try await container.addFavoriteUseCase.addFavorite(movie: movie, listId: listId)
-            },
-            removeFavoriteFromListUseCase: { movieId, listId in
-                try await container.removeFavoriteFromListUseCase.removeFavorite(movieId: movieId, listId: listId)
-            },
-            coordinator: childCoordinator,
-        ).build()
-    case .movieDetails, .favoriteListDetails:
-        appPushDestinationView(
-            container: container,
-            coordinator: childCoordinator,
-            authButtonBuilder: authButtonBuilder,
-            destination: destination
-        )
-    }
+    coordinator: any CoordinatorProtocol
+) -> AuthButtonBuilder {
+    AuthButtonBuilder(
+        currentUserUseCase: { container.profileRepository.currentUser },
+        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+        coordinator: coordinator
+    )
 }
 
-@ViewBuilder
-private func appPushDestinationView(
+@MainActor
+func makeFavoriteListsManageBuilder(
     container: AppContainer,
-    coordinator: AppCoordinatorProtocol,
-    authButtonBuilder: AuthButtonBuilder,
-    destination: AppPushDestination
+    coordinator: any CoordinatorProtocol
+) -> FavoriteListsManageBuilder {
+    FavoriteListsManageBuilder(
+        currentUserUseCase: { container.profileRepository.currentUser },
+        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+        favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
+        favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
+        refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
+        renameFavoriteListUseCase: { listId, name in
+            try await container.renameFavoriteListUseCase.rename(listId: listId, name: name)
+        },
+        deleteFavoriteListUseCase: { listId in
+            try await container.deleteFavoriteListUseCase.delete(listId: listId)
+        },
+        coordinator: coordinator
+    )
+}
+
+@MainActor
+private func makeMovieDetailsView(
+    movieId: MovieID,
+    container: AppContainer,
+    coordinator: any CoordinatorProtocol
 ) -> some View {
-    switch destination {
-    case .movieDetails(let movieId):
-        MovieDetailsBuilder(
-            movieDetailsUseCase: { movieId in
-                try await container.movieRepository.details(id: movieId)
-            },
-            authButtonBuilder: authButtonBuilder,
-            favoriteButtonBuilder: MovieDetailsFavoriteButtonBuilder(
-                currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-                handleFavoriteTapUseCase: { movieDetails in
-                    try await container.handleMovieDetailsFavoriteTapUseCase.handleTap(movieDetails: movieDetails)
-                },
-                lookupCurrentUserFavoriteListsUseCase: { movieId in
-                    try await container.lookupCurrentUserFavoriteListsUseCase.favoriteListIds(movieId: movieId)
-                },
-                coordinator: coordinator
-            )
-        ).build(movieId: movieId)
-    case .favoriteListDetails(let listId):
-        FavoriteListDetailsBuilder(
-            listId: listId,
-            currentUserUseCase: { container.profileRepository.currentUser },
+    MovieDetailsBuilder(
+        movieDetailsUseCase: { movieId in
+            try await container.movieRepository.details(id: movieId)
+        },
+        authButtonBuilder: makeAuthButtonBuilder(container: container, coordinator: coordinator),
+        favoriteButtonBuilder: MovieDetailsFavoriteButtonBuilder(
             currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-            favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
-            favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
-            refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
-            refreshFavoritesUseCase: { listId in
-                try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
+            handleFavoriteTapUseCase: { movieDetails in
+                try await container.handleMovieDetailsFavoriteTapUseCase.handleTap(movieDetails: movieDetails)
             },
-            coordinator: coordinator,
-            authButtonBuilder: authButtonBuilder
-        ).build()
-    case .favoriteListAddMovies:
-        EmptyView()
-    }
+            lookupCurrentUserFavoriteListsUseCase: { movieId in
+                try await container.lookupCurrentUserFavoriteListsUseCase.favoriteListIds(movieId: movieId)
+            },
+            coordinator: coordinator
+        )
+    ).build(movieId: movieId)
 }
 
-extension View {
-    func appCoordinatorDestination(
-        container: AppContainer,
-        coordinator: AppCoordinator,
-        authButtonBuilder: AuthButtonBuilder
-    ) -> some View {
-        modifier(AppCoordinatorDestinationModifier(
-            container: container,
-            coordinator: coordinator,
-            authButtonBuilder: authButtonBuilder
-        ))
-    }
+@MainActor
+private func makeFavoriteListDetailsView(
+    listId: FavoriteListID,
+    container: AppContainer,
+    coordinator: any CoordinatorProtocol
+) -> some View {
+    FavoriteListDetailsBuilder(
+        listId: listId,
+        currentUserUseCase: { container.profileRepository.currentUser },
+        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
+        favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
+        favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
+        refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
+        refreshFavoritesUseCase: { listId in
+            try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
+        },
+        coordinator: coordinator,
+        authButtonBuilder: makeAuthButtonBuilder(container: container, coordinator: coordinator)
+    ).build()
+}
 
-    func appCoordinatorPresentation(container: AppContainer, coordinator: AppCoordinator) -> some View {
-        modifier(AppCoordinatorPresentationModifier(container: container, coordinator: coordinator))
-    }
+@MainActor
+private func makeFavoriteListAddMoviesView(
+    request: FavoriteListAddMoviesRequest,
+    container: AppContainer,
+    coordinator: any CoordinatorProtocol
+) -> some View {
+    FavoriteListAddMoviesBuilder(
+        request: request,
+        searchMoviesUseCase: { query in
+            try await container.movieRepository.search(query: query)
+        },
+        movieDetailsUseCase: { movieId in
+            try await container.movieRepository.details(id: movieId)
+        },
+        refreshFavoritesUseCase: { listId in
+            try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
+        },
+        addFavoriteUseCase: { movie, listId in
+            try await container.addFavoriteUseCase.addFavorite(movie: movie, listId: listId)
+        },
+        removeFavoriteFromListUseCase: { movieId, listId in
+            try await container.removeFavoriteFromListUseCase.removeFavorite(movieId: movieId, listId: listId)
+        },
+        coordinator: coordinator
+    ).build()
 }

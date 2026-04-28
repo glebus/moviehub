@@ -9,13 +9,13 @@ public struct MovieDetailsFavoriteButtonBuilder {
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let handleFavoriteTapUseCase: HandleMovieDetailsFavoriteTapAction
     private let lookupCurrentUserFavoriteListsUseCase: LookupCurrentUserFavoriteListsAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
 
     public init(
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
         handleFavoriteTapUseCase: @escaping HandleMovieDetailsFavoriteTapAction,
         lookupCurrentUserFavoriteListsUseCase: @escaping LookupCurrentUserFavoriteListsAction,
-        coordinator: AppCoordinatorProtocol
+        coordinator: any CoordinatorProtocol
     ) {
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
         self.handleFavoriteTapUseCase = handleFavoriteTapUseCase
@@ -39,7 +39,7 @@ public struct MovieDetailsFavoriteButtonBuilder {
     }
 
     public static func preview(movieId: MovieID = MovieID("m1")) -> MovieDetailsFavoriteButtonBuilder {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock(currentUser: User(id: UserID("user"), username: "user"))
         let favoriteListsUseCases = FavoriteListsUseCaseMock(lists: [
             FavoriteList(id: FavoriteListID("l1"), name: "Comedies", color: .mint, createdAt: Date())

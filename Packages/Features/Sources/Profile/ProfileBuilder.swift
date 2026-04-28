@@ -11,7 +11,7 @@ public struct ProfileBuilder {
     private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let logoutUseCase: LogoutAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     private let authButtonBuilder: AuthButtonBuilder
     private let favoriteListsManageBuilder: FavoriteListsManageBuilder
 
@@ -19,7 +19,7 @@ public struct ProfileBuilder {
         currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
         logoutUseCase: @escaping LogoutAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder,
         favoriteListsManageBuilder: FavoriteListsManageBuilder
     ) {
@@ -44,7 +44,7 @@ public struct ProfileBuilder {
     }
 
     public static func preview() -> ProfileBuilder {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock()
         let favoriteListsUseCases = FavoriteListsUseCaseMock()
         return ProfileBuilder(

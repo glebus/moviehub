@@ -19,7 +19,7 @@ public final class FavoriteListAddMoviesViewModel {
     private let refreshFavoritesUseCase: RefreshFavoritesAction
     private let addFavoriteUseCase: AddFavoriteAction
     private let removeFavoriteFromListUseCase: RemoveFavoriteFromListAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
 
     @ObservationIgnored private var didAppear = false
 
@@ -33,7 +33,7 @@ public final class FavoriteListAddMoviesViewModel {
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
         addFavoriteUseCase: @escaping AddFavoriteAction,
         removeFavoriteFromListUseCase: @escaping RemoveFavoriteFromListAction,
-        coordinator: AppCoordinatorProtocol
+        coordinator: any CoordinatorProtocol
     ) {
         self.listId = request.listId
         self.listName = request.listName

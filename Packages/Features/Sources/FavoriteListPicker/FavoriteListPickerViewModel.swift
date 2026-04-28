@@ -18,7 +18,7 @@ public final class FavoriteListPickerViewModel {
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let addFavoriteUseCase: AddFavoriteAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
@@ -32,7 +32,7 @@ public final class FavoriteListPickerViewModel {
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         addFavoriteUseCase: @escaping AddFavoriteAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.movieDetails = movieDetails

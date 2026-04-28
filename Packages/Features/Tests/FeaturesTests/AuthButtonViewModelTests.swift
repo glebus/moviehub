@@ -9,7 +9,7 @@ import Coordinator
 struct AuthButtonViewModelTests {
     @Test
     func titleUpdatesFromSession() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let user = User(id: UserID("u1"), username: "alex")
         let session = SessionUseCaseMock(currentUser: user)
         let viewModel = AuthButtonViewModel(
@@ -23,7 +23,7 @@ struct AuthButtonViewModelTests {
 
     @Test
     func tappingWhenLoggedOutPresentsAuth() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock(currentUser: nil)
         let viewModel = AuthButtonViewModel(
             currentUserUseCase: { session.currentUser },
@@ -33,12 +33,12 @@ struct AuthButtonViewModelTests {
 
         viewModel.tapped()
 
-        #expect(coordinator.lastPresentedDestination == .auth)
+        #expect(coordinator.presentedDestination == .auth)
     }
 
     @Test
     func tappingWhenLoggedInSelectsProfileTab() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let user = User(id: UserID("u1"), username: "alex")
         let session = SessionUseCaseMock(currentUser: user)
         let viewModel = AuthButtonViewModel(

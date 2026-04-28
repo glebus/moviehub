@@ -8,12 +8,12 @@ import DomainMocks
 public struct AuthButtonBuilder {
     private let currentUserUseCase: CurrentUserReader
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
 
     public init(
         currentUserUseCase: @escaping CurrentUserReader,
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
-        coordinator: AppCoordinatorProtocol
+        coordinator: any CoordinatorProtocol
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase
@@ -30,7 +30,7 @@ public struct AuthButtonBuilder {
     }
 
     public static func preview() -> AuthButtonBuilder {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock()
         return AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },

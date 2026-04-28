@@ -1,100 +1,125 @@
 import SwiftUI
-import DomainModels
 import DomainUseCases
 import Data
 import MovieList
-import MovieDetails
 import FavoriteList
-import FavoriteListsManage
 import Profile
-import Auth
 import Coordinator
-import AuthButton
 
 struct RootTabView: View {
     let container: AppContainer
-    @State private var coordinator = AppCoordinator()
+    @State private var coordinator: TabCoordinator
+
+    init(container: AppContainer) {
+        self.container = container
+        _coordinator = State(initialValue: TabCoordinator(
+            builder: makeCoordinatorBuilder(container: container)
+        ))
+    }
 
     var body: some View {
-        let authButtonBuilder = AuthButtonBuilder(
-            currentUserUseCase: { container.profileRepository.currentUser },
-            currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-            coordinator: coordinator
-        )
+        TabCoordinatorView(coordinator: coordinator, container: container)
+    }
+}
+
+struct TabCoordinatorView: View {
+    @Bindable var coordinator: TabCoordinator
+    let container: AppContainer
+
+    var body: some View {
         TabView(selection: $coordinator.selectedTab) {
-            NavigationStack(path: $coordinator.homePath) {
+            NavigationStack(path: coordinator.bindingForPath(.home)) {
+                let tabCoordinator = coordinator.child(for: .home)
                 MovieListBuilder(
                     searchMoviesUseCase: { query in
                         try await container.movieRepository.search(query: query)
                     },
-                    coordinator: coordinator,
-                    authButtonBuilder: authButtonBuilder
+                    coordinator: tabCoordinator,
+                    authButtonBuilder: makeAuthButtonBuilder(
+                        container: container,
+                        coordinator: tabCoordinator
+                    )
                 ).build()
-                .appCoordinatorDestination(
-                    container: container,
-                    coordinator: coordinator,
-                    authButtonBuilder: authButtonBuilder
-                )
+                .navigationDestination(for: AppDestination.self) { destination in
+                    coordinator.builder(destination, tabCoordinator)
+                }
             }
             .tabItem {
                 Label("Home", systemImage: "film")
             }
             .tag(AppTab.home)
 
-            NavigationStack(path: $coordinator.favoritesPath) {
+            NavigationStack(path: coordinator.bindingForPath(.favorites)) {
+                let tabCoordinator = coordinator.child(for: .favorites)
                 FavoriteListBuilder(
                     currentUserUseCase: { container.profileRepository.currentUser },
                     currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
                     favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
                     favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
                     refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
-                    coordinator: coordinator,
-                    authButtonBuilder: authButtonBuilder
+                    coordinator: tabCoordinator,
+                    authButtonBuilder: makeAuthButtonBuilder(
+                        container: container,
+                        coordinator: tabCoordinator
+                    )
                 ).build()
-                .appCoordinatorDestination(
-                    container: container,
-                    coordinator: coordinator,
-                    authButtonBuilder: authButtonBuilder
-                )
+                .navigationDestination(for: AppDestination.self) { destination in
+                    coordinator.builder(destination, tabCoordinator)
+                }
             }
             .tabItem {
                 Label("Favorites", systemImage: "heart")
             }
             .tag(AppTab.favorites)
 
-            NavigationStack(path: $coordinator.profilePath) {
+            NavigationStack(path: coordinator.bindingForPath(.profile)) {
+                let tabCoordinator = coordinator.child(for: .profile)
                 ProfileBuilder(
                     currentUserUseCase: { container.profileRepository.currentUser },
                     currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
                     logoutUseCase: { await container.logoutUseCase.logout() },
-                    coordinator: coordinator,
-                    authButtonBuilder: authButtonBuilder,
-                    favoriteListsManageBuilder: FavoriteListsManageBuilder(
-                        currentUserUseCase: { container.profileRepository.currentUser },
-                        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
-                        favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
-                        favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
-                        refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
-                        renameFavoriteListUseCase: { listId, name in
-                            try await container.renameFavoriteListUseCase.rename(listId: listId, name: name)
-                        },
-                        deleteFavoriteListUseCase: { listId in
-                            try await container.deleteFavoriteListUseCase.delete(listId: listId)
-                        },
-                        coordinator: coordinator
+                    coordinator: tabCoordinator,
+                    authButtonBuilder: makeAuthButtonBuilder(
+                        container: container,
+                        coordinator: tabCoordinator
+                    ),
+                    favoriteListsManageBuilder: makeFavoriteListsManageBuilder(
+                        container: container,
+                        coordinator: tabCoordinator
                     )
                 ).build()
-                .appCoordinatorDestination(
-                    container: container,
-                    coordinator: coordinator,
-                    authButtonBuilder: authButtonBuilder
-                )
+                .navigationDestination(for: AppDestination.self) { destination in
+                    coordinator.builder(destination, tabCoordinator)
+                }
             }
             .tabItem {
                 Label("Profile", systemImage: "person")
             }
             .tag(AppTab.profile)
         }
-        .appCoordinatorPresentation(container: container, coordinator: coordinator)
+        .sheet(item: sheetBinding) { child in
+            CoordinatorView(coordinator: child)
+        }
+        .fullScreenCover(item: fullScreenBinding) { child in
+            CoordinatorView(coordinator: child)
+        }
+    }
+
+    private var sheetBinding: Binding<Coordinator?> {
+        Binding(
+            get: { coordinator.presented?.style == .sheet ? coordinator.presented : nil },
+            set: { newValue in if newValue == nil { coordinator.presented = nil } }
+        )
+    }
+
+    private var fullScreenBinding: Binding<Coordinator?> {
+        Binding(
+            get: {
+                coordinator.presented?.style == .fullScreenCover
+                    ? coordinator.presented
+                    : nil
+            },
+            set: { newValue in if newValue == nil { coordinator.presented = nil } }
+        )
     }
 }

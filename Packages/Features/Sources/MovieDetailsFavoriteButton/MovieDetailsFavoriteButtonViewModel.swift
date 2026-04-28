@@ -14,7 +14,7 @@ final class MovieDetailsFavoriteButtonViewModel {
     private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let handleFavoriteTapUseCase: HandleMovieDetailsFavoriteTapAction
     private let lookupCurrentUserFavoriteListsUseCase: LookupCurrentUserFavoriteListsAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
 
     @ObservationIgnored nonisolated(unsafe) private var sessionTask: Task<Void, Never>?
 
@@ -26,7 +26,7 @@ final class MovieDetailsFavoriteButtonViewModel {
         currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
         handleFavoriteTapUseCase: @escaping HandleMovieDetailsFavoriteTapAction,
         lookupCurrentUserFavoriteListsUseCase: @escaping LookupCurrentUserFavoriteListsAction,
-        coordinator: AppCoordinatorProtocol
+        coordinator: any CoordinatorProtocol
     ) {
         self.movieDetails = movieDetails
         self.currentUserSequenceUseCase = currentUserSequenceUseCase

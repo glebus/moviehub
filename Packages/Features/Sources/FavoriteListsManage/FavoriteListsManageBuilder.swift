@@ -12,7 +12,7 @@ public struct FavoriteListsManageBuilder {
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let renameFavoriteListUseCase: RenameFavoriteListAction
     private let deleteFavoriteListUseCase: DeleteFavoriteListAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
 
     public init(
         currentUserUseCase: @escaping CurrentUserReader,
@@ -22,7 +22,7 @@ public struct FavoriteListsManageBuilder {
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         renameFavoriteListUseCase: @escaping RenameFavoriteListAction,
         deleteFavoriteListUseCase: @escaping DeleteFavoriteListAction,
-        coordinator: AppCoordinatorProtocol
+        coordinator: any CoordinatorProtocol
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase

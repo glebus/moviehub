@@ -10,7 +10,7 @@ import AuthButton
 struct MovieListViewModelTests {
     @Test
     func submitSearchLoadsMovies() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock()
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },

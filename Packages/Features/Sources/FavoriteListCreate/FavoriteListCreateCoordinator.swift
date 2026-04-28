@@ -2,25 +2,25 @@ import SwiftUI
 import DomainModels
 import Coordinator
 
+enum FavoriteListCreateDestination: Hashable, Sendable {
+    case color
+    case created(FavoriteList)
+}
+
 @MainActor
 public final class FavoriteListCreateCoordinator {
-    enum Destination: Hashable, Sendable {
-        case color
-        case created(FavoriteList)
-    }
+    private let coordinator: any CoordinatorProtocol
 
-    private let coordinator: FlowCoordinatorProtocol
-
-    public init(coordinator: FlowCoordinatorProtocol) {
+    public init(coordinator: any CoordinatorProtocol) {
         self.coordinator = coordinator
     }
 
     func showColor() {
-        coordinator.appendPathValue(Destination.color)
+        coordinator.push(FavoriteListCreateDestination.color)
     }
 
     func showCreated(_ list: FavoriteList) {
-        coordinator.appendPathValue(Destination.created(list))
+        coordinator.push(FavoriteListCreateDestination.created(list))
     }
 
     func dismiss() {
@@ -28,7 +28,7 @@ public final class FavoriteListCreateCoordinator {
     }
 
     func showAddMovies(for list: FavoriteList) {
-        coordinator.push(.favoriteListAddMovies(FavoriteListAddMoviesRequest(
+        coordinator.push(AppDestination.favoriteListAddMovies(FavoriteListAddMoviesRequest(
             listId: list.id,
             listName: list.name,
             initialQuery: "SpiderMan"
@@ -42,7 +42,7 @@ struct FavoriteListCreateCoordinatorView: View {
 
     public var body: some View {
         FavoriteListNameScreen(viewModel: viewModel)
-            .navigationDestination(for: FavoriteListCreateCoordinator.Destination.self) { destination in
+            .navigationDestination(for: FavoriteListCreateDestination.self) { destination in
                 switch destination {
                 case .color:
                     FavoriteListColorScreen(viewModel: viewModel)

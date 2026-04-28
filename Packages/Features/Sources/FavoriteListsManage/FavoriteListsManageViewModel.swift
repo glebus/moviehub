@@ -17,7 +17,7 @@ public final class FavoriteListsManageViewModel {
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let renameFavoriteListUseCase: RenameFavoriteListAction
     private let deleteFavoriteListUseCase: DeleteFavoriteListAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
 
     @ObservationIgnored private var sessionTask: Task<Void, Never>?
     @ObservationIgnored private var listsTask: Task<Void, Never>?
@@ -30,7 +30,7 @@ public final class FavoriteListsManageViewModel {
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         renameFavoriteListUseCase: @escaping RenameFavoriteListAction,
         deleteFavoriteListUseCase: @escaping DeleteFavoriteListAction,
-        coordinator: AppCoordinatorProtocol
+        coordinator: any CoordinatorProtocol
     ) {
         self.currentUserUseCase = currentUserUseCase
         self.currentUserSequenceUseCase = currentUserSequenceUseCase

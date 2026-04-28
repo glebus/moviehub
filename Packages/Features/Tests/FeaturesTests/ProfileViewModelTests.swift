@@ -11,7 +11,7 @@ import FavoriteListsManage
 struct ProfileViewModelTests {
     @Test
     func updatesStateWhenUserLoggedIn() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock(currentUser: User(id: UserID("u1"), username: "alex"))
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },
@@ -47,7 +47,7 @@ struct ProfileViewModelTests {
 
     @Test
     func logoutTransitionsToLoggedOut() async {
-        let coordinator = AppCoordinatorMock()
+        let coordinator = CoordinatorMock()
         let session = SessionUseCaseMock(currentUser: User(id: UserID("u1"), username: "alex"))
         let authButtonBuilder = AuthButtonBuilder(
             currentUserUseCase: { session.currentUser },

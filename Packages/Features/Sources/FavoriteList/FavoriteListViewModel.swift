@@ -29,7 +29,7 @@ public final class FavoriteListViewModel {
     private let favoriteListsStateUseCase: FavoriteListsReader
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
-    private let coordinator: AppCoordinatorProtocol
+    private let coordinator: any CoordinatorProtocol
     public let authButtonBuilder: AuthButtonBuilder
 
     @ObservationIgnored private var profileTask: Task<Void, Never>?
@@ -41,7 +41,7 @@ public final class FavoriteListViewModel {
         favoriteListsStateUseCase: @escaping FavoriteListsReader,
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
-        coordinator: AppCoordinatorProtocol,
+        coordinator: any CoordinatorProtocol,
         authButtonBuilder: AuthButtonBuilder
     ) {
         self.currentUserUseCase = currentUserUseCase
@@ -67,7 +67,7 @@ public final class FavoriteListViewModel {
     }
 
     public func select(listId: FavoriteListID) {
-        coordinator.push(.favoriteListDetails(listId))
+        coordinator.push(AppDestination.favoriteListDetails(listId))
     }
 
     private func subscribeToSession() {
