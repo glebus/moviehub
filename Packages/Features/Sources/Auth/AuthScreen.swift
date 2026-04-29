@@ -1,3 +1,4 @@
+import Design
 import SwiftUI
 
 public struct AuthScreen: View {
@@ -18,7 +19,7 @@ public struct AuthScreen: View {
                     .foregroundStyle(.red)
             }
 
-            Button("Login") {
+            FullWidthButton("Login") {
                 viewModel.loginTapped()
             }
             .buttonStyle(.borderedProminent)

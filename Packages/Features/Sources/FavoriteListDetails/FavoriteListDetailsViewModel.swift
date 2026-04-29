@@ -2,7 +2,6 @@ import Observation
 import DomainModels
 import DomainUseCases
 import Coordinator
-import AuthButton
 
 @MainActor
 @Observable
@@ -10,57 +9,43 @@ public final class FavoriteListDetailsViewModel {
     public var listName: String
     public var listColor: FavoriteListColor
     public var favorites: [Movie]
-    public var currentUser: User?
     public var errorMessage: String?
 
     private let listId: FavoriteListID
-    private let currentUserUseCase: CurrentUserReader
-    private let currentUserSequenceUseCase: CurrentUserSequenceSource
     private let favoriteListsStateUseCase: FavoriteListsReader
     private let favoriteListsSequenceUseCase: FavoriteListsSequenceSource
     private let refreshFavoriteListsUseCase: RefreshFavoriteListsAction
     private let refreshFavoritesUseCase: RefreshFavoritesAction
     private let coordinator: any CoordinatorProtocol
-    public let authButtonBuilder: AuthButtonBuilder
 
-    @ObservationIgnored private var sessionTask: Task<Void, Never>?
     @ObservationIgnored private var listsTask: Task<Void, Never>?
 
     init(
         listId: FavoriteListID,
-        currentUserUseCase: @escaping CurrentUserReader,
-        currentUserSequenceUseCase: @escaping CurrentUserSequenceSource,
         favoriteListsStateUseCase: @escaping FavoriteListsReader,
         favoriteListsSequenceUseCase: @escaping FavoriteListsSequenceSource,
         refreshFavoriteListsUseCase: @escaping RefreshFavoriteListsAction,
         refreshFavoritesUseCase: @escaping RefreshFavoritesAction,
-        coordinator: any CoordinatorProtocol,
-        authButtonBuilder: AuthButtonBuilder
+        coordinator: any CoordinatorProtocol
     ) {
         self.listId = listId
-        self.currentUserUseCase = currentUserUseCase
-        self.currentUserSequenceUseCase = currentUserSequenceUseCase
         self.favoriteListsStateUseCase = favoriteListsStateUseCase
         self.favoriteListsSequenceUseCase = favoriteListsSequenceUseCase
         self.refreshFavoriteListsUseCase = refreshFavoriteListsUseCase
         self.refreshFavoritesUseCase = refreshFavoritesUseCase
         self.coordinator = coordinator
-        self.authButtonBuilder = authButtonBuilder
         self.listName = "List"
         self.listColor = .slate
         self.favorites = []
         self.errorMessage = nil
-        applySession(currentUserUseCase())
         applyLists(favoriteListsStateUseCase())
     }
 
     deinit {
-        sessionTask?.cancel()
         listsTask?.cancel()
     }
 
     public func onAppear() {
-        subscribeToSession()
         subscribeToLists()
         Task {
             try? await refreshFavoriteListsUseCase()
@@ -72,15 +57,12 @@ public final class FavoriteListDetailsViewModel {
         coordinator.push(AppDestination.movieDetails(movieId))
     }
 
-    private func subscribeToSession() {
-        sessionTask?.cancel()
-        sessionTask = Task { [weak self, currentUserSequenceUseCase] in
-            for await user in currentUserSequenceUseCase() {
-                guard !Task.isCancelled else { break }
-                self?.applySession(user)
-                await self?.refreshFavorites()
-            }
-        }
+    public func addMovieTapped() {
+        coordinator.present(AppDestination.favoriteListAddMovies(FavoriteListAddMoviesRequest(
+            listId: listId,
+            listName: listName,
+            initialQuery: "Spider-man"
+        )))
     }
 
     private func subscribeToLists() {
@@ -90,13 +72,6 @@ public final class FavoriteListDetailsViewModel {
                 guard !Task.isCancelled else { break }
                 self?.applyLists(lists)
             }
-        }
-    }
-
-    private func applySession(_ user: User?) {
-        currentUser = user
-        if user == nil {
-            favorites = []
         }
     }
 

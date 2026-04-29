@@ -31,7 +31,9 @@ public struct FavoriteListPickerScreen: View {
                                     .frame(width: 14, height: 14)
                                 Text(list.name)
                                     .font(.headline)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
                     }

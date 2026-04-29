@@ -57,7 +57,7 @@ public final class FavoriteListsManageViewModel {
     }
 
     public func addTapped() {
-        coordinator.present(.favoriteListCreate)
+        coordinator.present(.favoriteListCreate(movieToAdd: nil))
     }
 
     public func rename(listId: FavoriteListID, name: String) {

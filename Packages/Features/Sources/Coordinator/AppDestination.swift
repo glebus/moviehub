@@ -6,7 +6,7 @@ public enum AppDestination: Hashable, Sendable {
     case favoriteListAddMovies(FavoriteListAddMoviesRequest)
     case auth
     case favoriteListPicker(MovieDetails)
-    case favoriteListCreate
+    case favoriteListCreate(movieToAdd: MovieDetails?)
 }
 
 public enum PresentationStyle: Hashable, Sendable {

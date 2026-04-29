@@ -56,12 +56,16 @@ func makeCoordinatorBuilder(container: AppContainer) -> CoordinatorBuilder {
                 coordinator: coordinator,
                 authButtonBuilder: makeAuthButtonBuilder(container: container, coordinator: coordinator)
             ).build())
-        case .favoriteListCreate:
+        case .favoriteListCreate(let movieToAdd):
             AnyView(FavoriteListCreateBuilder(
                 createFavoriteListUseCase: { name, color in
                     try await container.createFavoriteListUseCase.create(name: name, color: color)
                 },
+                addFavoriteUseCase: { movie, listId in
+                    try await container.addFavoriteUseCase.addFavorite(movie: movie, listId: listId)
+                },
                 currentUserUseCase: { container.profileRepository.currentUser },
+                movieToAdd: movieToAdd,
                 coordinator: coordinator
             ).build())
         }
@@ -133,16 +137,13 @@ private func makeFavoriteListDetailsView(
 ) -> some View {
     FavoriteListDetailsBuilder(
         listId: listId,
-        currentUserUseCase: { container.profileRepository.currentUser },
-        currentUserSequenceUseCase: { container.profileRepository.currentUserSequence },
         favoriteListsStateUseCase: { container.favoriteListsRepository.lists },
         favoriteListsSequenceUseCase: { container.favoriteListsRepository.listsSequence },
         refreshFavoriteListsUseCase: { try await container.refreshFavoriteListsUseCase.refresh() },
         refreshFavoritesUseCase: { listId in
             try await container.refreshFavoritesUseCase.refreshFavorites(listId: listId)
         },
-        coordinator: coordinator,
-        authButtonBuilder: makeAuthButtonBuilder(container: container, coordinator: coordinator)
+        coordinator: coordinator
     ).build()
 }
 

@@ -1,6 +1,7 @@
 import SwiftUI
 import DomainModels
 import DomainUseCases
+import Design
 
 struct FavoriteListColorScreen: View {
     @Bindable var viewModel: FavoriteListCreateViewModel
@@ -36,7 +37,9 @@ struct FavoriteListColorScreen: View {
 
             Spacer()
 
-            Button(viewModel.isSaving ? "Creating..." : "Create list") {
+            FullWidthButton(
+                viewModel.isSaving ? "Creating..." : "Create list"
+            ) {
                 viewModel.createTapped()
             }
             .buttonStyle(.borderedProminent)

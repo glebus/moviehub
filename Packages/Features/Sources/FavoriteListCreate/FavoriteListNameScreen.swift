@@ -1,4 +1,5 @@
 import SwiftUI
+import Design
 
 struct FavoriteListNameScreen: View {
     @Bindable var viewModel: FavoriteListCreateViewModel
@@ -13,7 +14,7 @@ struct FavoriteListNameScreen: View {
 
             Spacer()
 
-            Button("Next") {
+            FullWidthButton("Next") {
                 viewModel.nextTapped()
             }
             .buttonStyle(.borderedProminent)
@@ -21,6 +22,13 @@ struct FavoriteListNameScreen: View {
         }
         .padding()
         .navigationTitle("New List")
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Close") {
+                    viewModel.closeTapped()
+                }
+            }
+        }
         .alert("Couldn't create list", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }

@@ -42,9 +42,9 @@ struct CoordinatorTests {
         let coordinator = TabCoordinator(builder: builder)
         coordinator.present(.auth)
 
-        coordinator.presented?.dismissAndPresent(.favoriteListCreate)
+        coordinator.presented?.dismissAndPresent(.favoriteListCreate(movieToAdd: nil))
 
-        #expect(coordinator.presented?.destination == .favoriteListCreate)
+        #expect(coordinator.presented?.destination == .favoriteListCreate(movieToAdd: nil))
         #expect(coordinator.presented?.style == .sheet)
     }
 

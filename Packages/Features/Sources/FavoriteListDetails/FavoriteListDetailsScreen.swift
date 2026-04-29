@@ -2,41 +2,33 @@ import SwiftUI
 import DomainModels
 import DomainUseCases
 import Coordinator
-import AuthButton
 
 public struct FavoriteListDetailsScreen: View {
     @State var viewModel: FavoriteListDetailsViewModel
 
     public var body: some View {
         Group {
-            if viewModel.currentUser == nil {
+            if viewModel.favorites.isEmpty {
                 VStack {
-                    Text("Not logged in")
+                    Text("No favorites")
                         .font(.headline)
                 }
             } else {
-                if viewModel.favorites.isEmpty {
-                    VStack {
-                        Text("No favorites")
-                            .font(.headline)
-                    }
-                } else {
-                    List(viewModel.favorites, id: \.id) { movie in
-                        Button {
-                            viewModel.select(movieId: movie.id)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(movie.title)
-                                    .font(.headline)
-                                if let year = movie.year {
-                                    Text(year)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
+                List(viewModel.favorites, id: \.id) { movie in
+                    Button {
+                        viewModel.select(movieId: movie.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(movie.title)
+                                .font(.headline)
+                            if let year = movie.year {
+                                Text(year)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
                         }
-                        .buttonStyle(.plain)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -45,7 +37,11 @@ public struct FavoriteListDetailsScreen: View {
             viewModel.onAppear()
         }
         .toolbar {
-            viewModel.authButtonBuilder.build()
+            Button {
+                viewModel.addMovieTapped()
+            } label: {
+                Label("Add Movie", systemImage: "plus")
+            }
         }
     }
 }

@@ -2,7 +2,8 @@ import Foundation
 import SwiftData
 import DomainModels
 
-public actor SwiftDataStorage {
+@MainActor
+public final class SwiftDataStorage {
     private let container: ModelContainer
     private let context: ModelContext
 

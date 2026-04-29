@@ -21,12 +21,14 @@ let package = Package(
         .library(name: "Profile", targets: ["Profile"]),
         .library(name: "Auth", targets: ["Auth"]),
         .library(name: "AuthButton", targets: ["AuthButton"]),
-        .library(name: "Coordinator", targets: ["Coordinator"])
+        .library(name: "Coordinator", targets: ["Coordinator"]),
+        .library(name: "Design", targets: ["Design"])
     ],
     dependencies: [
         .package(path: "../Domain")
     ],
     targets: [
+        .target(name: "Design"),
         .target(
             name: "Coordinator",
             dependencies: [
@@ -87,8 +89,7 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Coordinator",
-                "AuthButton"
+                "Coordinator"
             ]
         ),
         .target(
@@ -96,7 +97,8 @@ let package = Package(
             dependencies: [
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
-                "Coordinator"
+                "Coordinator",
+                "Design"
             ]
         ),
         .target(
@@ -141,6 +143,7 @@ let package = Package(
                 .product(name: "DomainModels", package: "Domain"),
                 .product(name: "DomainUseCases", package: "Domain"),
                 "Coordinator",
+                "Design",
                 .product(name: "DomainMocks", package: "Domain")
             ]
         ),

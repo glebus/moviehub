@@ -59,7 +59,7 @@ final class MovieDetailsFavoriteButtonViewModel {
             case .requireAuth:
                 coordinator.present(.auth)
             case .showCreateList:
-                coordinator.present(.favoriteListCreate)
+                coordinator.present(.favoriteListCreate(movieToAdd: movieDetails))
             case .showPicker(let movieDetails):
                 coordinator.present(.favoriteListPicker(movieDetails))
             case .removed:

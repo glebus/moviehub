@@ -28,7 +28,7 @@ public final class FavoriteListCreateCoordinator {
     }
 
     func showAddMovies(for list: FavoriteList) {
-        coordinator.push(AppDestination.favoriteListAddMovies(FavoriteListAddMoviesRequest(
+        coordinator.present(AppDestination.favoriteListAddMovies(FavoriteListAddMoviesRequest(
             listId: list.id,
             listName: list.name,
             initialQuery: "SpiderMan"
@@ -37,8 +37,16 @@ public final class FavoriteListCreateCoordinator {
 }
 
 struct FavoriteListCreateCoordinatorView: View {
-    @Bindable var viewModel: FavoriteListCreateViewModel
+    @State private var viewModel: FavoriteListCreateViewModel
     let coordinator: FavoriteListCreateCoordinator
+
+    public init(
+        viewModel: FavoriteListCreateViewModel,
+        coordinator: FavoriteListCreateCoordinator
+    ) {
+        _viewModel = State(initialValue: viewModel)
+        self.coordinator = coordinator
+    }
 
     public var body: some View {
         FavoriteListNameScreen(viewModel: viewModel)
